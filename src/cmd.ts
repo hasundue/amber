@@ -1,28 +1,6 @@
 import type { ConstructorSpy } from "@std/testing/mock";
 import * as std from "@std/testing/mock";
 
-const spies = new Map<
-  string,
-  ConstructorSpy<
-    Deno.Command,
-    [command: string | URL, options?: Deno.CommandOptions]
-  >
->();
-
-export const MockCommand = new Proxy(Deno.Command, {
-  construct(target, args) {
-    const [command, options] = args as ConstructorParameters<
-      typeof Deno.Command
-    >;
-    const spy = spies.get(command.toString());
-    if (spy) {
-      return new spy(command, options);
-    } else {
-      return new target(command, options);
-    }
-  },
-});
-
 export interface CommandSpy<Command extends string | URL>
   extends
     Disposable,
@@ -56,6 +34,14 @@ export class CommandDummy extends Deno.Command {
   }
 }
 
+const spies = new Map<
+  string,
+  ConstructorSpy<
+    Deno.Command,
+    [command: string | URL, options?: Deno.CommandOptions]
+  >
+>();
+
 export function stub<Command extends string | URL>(
   command: Command,
   fake: typeof Deno.Command = CommandDummy,
@@ -80,4 +66,31 @@ export function spy<Command extends string | URL>(
   command: Command,
 ): CommandSpy<Command> {
   return stub(command, Deno.Command);
+}
+
+const MockCommand = new Proxy(Deno.Command, {
+  construct(target, args) {
+    const [command, options] = args as ConstructorParameters<
+      typeof Deno.Command
+    >;
+    const spy = spies.get(command.toString());
+    if (spy) {
+      return new spy(command, options);
+    } else {
+      return new target(command, options);
+    }
+  },
+});
+
+export function use<
+  // deno-lint-ignore no-explicit-any
+  T extends any,
+>(fn: () => T): T {
+  const Orignal = Deno.Command;
+  Deno.Command = MockCommand;
+  try {
+    return fn();
+  } finally {
+    Deno.Command = Orignal;
+  }
 }

@@ -1,19 +1,16 @@
 import { assertExists, assertThrows } from "@std/assert";
-import { afterAll, describe, it } from "@std/testing/bdd";
+import { describe, it } from "@std/testing/bdd";
 import { assertSpyCallArg, assertSpyCalls } from "@std/testing/mock";
-import { MockCommand, spy, stub } from "./cmd.ts";
+import { spy, stub, use } from "./cmd.ts";
 
-describe("MockCommand", () => {
-  const original = Deno.Command;
-  afterAll(() => {
-    Deno.Command = original;
-  });
+describe("use", () => {
   it("should be able to replace Deno.Command", () => {
-    Deno.Command = MockCommand;
-    const echo = new Deno.Command("echo");
-    assertExists(echo);
+    use(() => {
+      const echo = new Deno.Command("echo");
+      assertExists(echo);
+    });
   });
-});
+})
 
 describe("spy", () => {
   it("should create a spy for a command", () => {
@@ -25,40 +22,48 @@ describe("spy", () => {
 describe("CommandSpy", () => {
   it("should be examined with assertSpyCalls", () => {
     using cat = spy("cat");
-    assertSpyCalls(cat, 0);
-    new MockCommand("cat");
-    assertSpyCalls(cat, 1);
-    new MockCommand("cat");
-    assertSpyCalls(cat, 2);
+    use(() => {
+      assertSpyCalls(cat, 0);
+      new Deno.Command("cat");
+      assertSpyCalls(cat, 1);
+      new Deno.Command("cat");
+      assertSpyCalls(cat, 2);
+    });
   });
 
   it("should distinguish between different commands", () => {
     using cat = spy("cat");
     using echo = spy("echo");
-    assertSpyCalls(cat, 0);
-    assertSpyCalls(echo, 0);
-    new MockCommand("cat");
-    assertSpyCalls(cat, 1);
-    assertSpyCalls(echo, 0);
-    new MockCommand("echo");
-    assertSpyCalls(cat, 1);
-    assertSpyCalls(echo, 1);
+    use(() => {
+      assertSpyCalls(cat, 0);
+      assertSpyCalls(echo, 0);
+      new Deno.Command("cat");
+      assertSpyCalls(cat, 1);
+      assertSpyCalls(echo, 0);
+      new Deno.Command("echo");
+      assertSpyCalls(cat, 1);
+      assertSpyCalls(echo, 1);
+    });
   });
 
   it("should be examined with assertSpyCallArg", () => {
     using echo = spy("echo");
-    new MockCommand("echo");
-    assertSpyCallArg(echo, 0, 1, undefined);
-    new MockCommand("echo", { cwd: "/tmp" });
-    assertSpyCallArg(echo, 1, 1, { cwd: "/tmp" });
+    use(() => {
+      new Deno.Command("echo");
+      assertSpyCallArg(echo, 0, 1, undefined);
+      new Deno.Command("echo", { cwd: "/tmp" });
+      assertSpyCallArg(echo, 1, 1, { cwd: "/tmp" });
+    });
   });
 });
 
 describe("stub", () => {
   it("should create a stub for a command with a dummy by default", async () => {
     using echo = stub("echo");
-    await new MockCommand("echo").output();
-    assertSpyCalls(echo, 1);
+    await use(async () => {
+      await new Deno.Command("echo").output();
+      assertSpyCalls(echo, 1);
+    });
   });
 
   it("should create a stub for a command with a fake", () => {
@@ -75,6 +80,6 @@ describe("stub", () => {
       },
     );
     assertExists(echo);
-    assertThrows(() => new MockCommand("echo"));
+    assertThrows(() => use(() => new Deno.Command("echo")));
   });
 });
