@@ -101,6 +101,10 @@ export function mock(): Disposable {
 }
 
 export function use<T>(fn: () => T): T {
-  using _ = mock();
-  return fn();
+  mock();
+  try {
+    return fn();
+  } finally {
+    restore();
+  }
 }

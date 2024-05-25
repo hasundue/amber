@@ -96,9 +96,12 @@ export function mock(): Disposable {
 }
 
 export function use<T>(fn: () => T) {
-  using stack = new DisposableStack();
-  stack.use(mock());
-  return fn();
+  mock();
+  try {
+    return fn();
+  } finally {
+    restore();
+  }
 }
 
 function useUniPathFn<T extends FsFn>(

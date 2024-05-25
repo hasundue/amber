@@ -83,6 +83,7 @@ describe("CommandSpy", () => {
   let echo: CommandSpy<"echo">;
 
   beforeEach(() => {
+    cmd.mock();
     echo = cmd.spy("echo");
   });
 
@@ -91,7 +92,6 @@ describe("CommandSpy", () => {
   });
 
   it("should be tested with assertSpyCalls", () => {
-    cmd.mock();
     assertSpyCalls(echo, 0);
     new Deno.Command("echo");
     assertSpyCalls(echo, 1);
@@ -100,7 +100,6 @@ describe("CommandSpy", () => {
   });
 
   it("should be tested with assertSpyCallArg", () => {
-    cmd.mock();
     new Deno.Command("echo");
     assertSpyCallArg(echo, 0, 1, undefined);
     new Deno.Command("echo", { cwd: "/tmp" });
@@ -109,7 +108,6 @@ describe("CommandSpy", () => {
 
   it("should distinguish between different commands", () => {
     const ls = cmd.spy("ls");
-    cmd.mock();
     new Deno.Command("echo");
     assertSpyCalls(echo, 1);
     assertSpyCalls(ls, 0);
