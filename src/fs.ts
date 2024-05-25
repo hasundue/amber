@@ -1,25 +1,8 @@
-import { assertFalse } from "jsr:@std/assert@^0.225.3/assert-false";
-
 export function stub(
   path: string | URL,
 ) {
   return;
 }
-
-const NoPathAsyncFns = [
-  "flock",
-  "funlock",
-  "fstat",
-  "ftruncate",
-  "futime",
-  "makeTempDir",
-] as const;
-
-type NoPathFn = typeof NoPathAsyncFns[number];
-type NoPathSyncFn = `${NoPathFn}Sync`;
-
-const NoPathSyncFns = NoPathAsyncFns
-  .map((name) => name + "Sync") as [NoPathSyncFn];
 
 const UniPathFns = [
   "chmod",
@@ -58,26 +41,23 @@ const BiPathFns = [
 type BiPathFn = typeof BiPathFns[number];
 type BiPathSyncFn = `${BiPathFn}Sync`;
 
-const BiSyncFns = BiPathFns
+const BiPathSyncFns = BiPathFns
   .map((name) => name + "Sync") as [BiPathSyncFn];
 
-const FsFns = [
-  ...NoPathAsyncFns,
-  ...NoPathSyncFns,
+const PathFns = [
   ...UniPathFns,
   ...UniPathSyncFns,
   ...BiPathFns,
-  ...BiSyncFns,
-  "umask",
+  ...BiPathSyncFns,
 ] as const;
 
-type FsFn = typeof FsFns[number];
+type PathFn = typeof PathFns[number];
 
 export function use(): void;
 export function use<T>(fn: () => T): T;
 
 export function use<T>(fn?: () => T) {
-  for (const name of FsFns) {
+  for (const name of PathFns) {
     Deno[name] = () => {
       throw new Error();
     };
@@ -90,19 +70,19 @@ export function use<T>(fn?: () => T) {
   }
 }
 
-const FsFnOrg = Object.fromEntries(
-  FsFns.map((name) => [name, Deno[name]]),
+const PathFnsOrg = Object.fromEntries(
+  PathFns.map((name) => [name, Deno[name]]),
 ) as {
-  [F in FsFn]: typeof Deno[F];
+  [F in PathFn]: typeof Deno[F];
 };
 
 export function restore() {
-  Object.entries(FsFnOrg).forEach(([name, fn]) => {
-    _restore(name as FsFn, fn);
+  Object.entries(PathFnsOrg).forEach(([name, fn]) => {
+    _restore(name as PathFn, fn);
   });
 }
 
-function _restore<T extends FsFn>(
+function _restore<T extends PathFn>(
   name: T,
   fn: typeof Deno[T],
 ) {

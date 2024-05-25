@@ -1,8 +1,8 @@
 import { describe, it } from "@std/testing/bdd";
-import { mock } from "./fs.ts";
+import * as fs from "./fs.ts";
 
-describe("mock", () => {
+describe("restore", () => {
   it("should be callable", () => {
-    mock();
+    fs.restore();
   });
 });
