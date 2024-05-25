@@ -15,7 +15,9 @@ export interface CommandStub<Command extends string | URL>
   fake: typeof Deno.Command;
 }
 
-class CommandDummy extends Deno.Command {
+const CommandOriginal = Deno.Command;
+
+class CommandDummy extends CommandOriginal {
   #output: Deno.CommandOutput = {
     code: 0,
     stdout: new Uint8Array(),
@@ -68,12 +70,10 @@ export function stub<Command extends string | URL>(
 export function spy<Command extends string | URL>(
   command: Command,
 ): CommandSpy<Command> {
-  return stub(command, Deno.Command);
+  return stub(command, CommandOriginal);
 }
 
-const CommandOriginal = Deno.Command;
-
-const CommandProxy: typeof Deno.Command = new Proxy(Deno.Command, {
+const CommandProxy: typeof Deno.Command = new Proxy(CommandOriginal, {
   construct(target, args) {
     const [command, options] = args as ConstructorParameters<
       typeof Deno.Command
