@@ -15,7 +15,7 @@ export interface CommandStub<Command extends string | URL>
   fake: typeof Deno.Command;
 }
 
-class CommandDummy extends Deno.Command {
+export class CommandDummy extends Deno.Command {
   #output: Deno.CommandOutput = {
     code: 0,
     stdout: new Uint8Array(),
@@ -56,7 +56,9 @@ const CommandProxy: typeof Deno.Command = new Proxy(Deno.Command, {
   },
 });
 
-export class MockCommand extends CommandProxy {
+export class CommandMock extends CommandProxy {
+  static readonly #Original = Deno.Command;
+
   static stub<Command extends string | URL>(
     command: Command,
     fake: typeof Deno.Command = CommandDummy,
@@ -86,14 +88,20 @@ export class MockCommand extends CommandProxy {
     return this.stub(command, Deno.Command);
   }
 
-  // deno-lint-ignore no-explicit-any
-  static use<T extends any>(fn: () => T): T {
-    const Orignal = Deno.Command;
-    Deno.Command = MockCommand;
+  static use(): void;
+  static use<T>(fn: () => T): T;
+
+  static use<T>(fn?: () => T) {
+    Deno.Command = CommandMock;
+    if (!fn) return;
     try {
       return fn();
     } finally {
-      Deno.Command = Orignal;
+      this.restore();
     }
+  }
+
+  static restore() {
+    Deno.Command = this.#Original;
   }
 }

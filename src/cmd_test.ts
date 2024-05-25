@@ -1,14 +1,16 @@
 import {
+  assert,
   assertEquals,
   assertExists,
+  assertFalse,
   assertInstanceOf,
   assertThrows,
 } from "@std/assert";
 import { afterEach, beforeEach, describe, it } from "@std/testing/bdd";
 import { assertSpyCallArg, assertSpyCalls } from "@std/testing/mock";
-import { type CommandSpy, type CommandStub, MockCommand } from "./cmd.ts";
+import { type CommandSpy, type CommandStub, CommandMock } from "./cmd.ts";
 
-describe("MockCommand", () => {
+describe("CommandMock", () => {
   const Original = Deno.Command;
 
   afterEach(() => {
@@ -16,31 +18,31 @@ describe("MockCommand", () => {
   });
 
   it("should be a constructor of Deno.Command", () => {
-    assertInstanceOf(new MockCommand("echo"), Deno.Command);
+    assertInstanceOf(new CommandMock("echo"), Deno.Command);
   });
 
   it("should be able to replace Deno.Command", () => {
-    Deno.Command = MockCommand;
+    Deno.Command = CommandMock;
     assertInstanceOf(new Deno.Command("echo"), Original);
   });
 
   describe("spy", () => {
     it("should create a spy for a command", () => {
-      using echo = MockCommand.spy("echo");
-      new MockCommand("echo");
+      using echo = CommandMock.spy("echo");
+      new CommandMock("echo");
       assertSpyCalls(echo, 1);
     });
   });
 
   describe("stub", () => {
     it("should create a stub for a command with a dummy by default", async () => {
-      using echo = MockCommand.stub("echo");
-      await new MockCommand("echo").output();
+      using echo = CommandMock.stub("echo");
+      await new CommandMock("echo").output();
       assertSpyCalls(echo, 1);
     });
 
     it("should create a stub for a command with a fake", () => {
-      using echo = MockCommand.stub(
+      using echo = CommandMock.stub(
         "echo",
         class extends Deno.Command {
           constructor(
@@ -53,17 +55,37 @@ describe("MockCommand", () => {
         },
       );
       assertExists(echo);
-      assertThrows(() => new MockCommand("echo"));
+      assertThrows(() => new CommandMock("echo"));
     });
   });
 
   describe("use", () => {
+    afterEach(() => {
+      Deno.Command = Original;
+    });
+
+    it("should replace Deno.Command", () => {
+      CommandMock.use();
+      assert("use" in Deno.Command);
+    });
+
     it("should replace Deno.Command inside the callback", () => {
-      using echo = MockCommand.spy("echo");
-      MockCommand.use(() => {
+      using echo = CommandMock.spy("echo");
+      CommandMock.use(() => {
         new Deno.Command("echo");
       });
       assertSpyCalls(echo, 1);
+    });
+  });
+
+  describe("restore", () => {
+    beforeEach(() => {
+      CommandMock.use();
+    });
+
+    it("should restore Deno.Command", () => {
+      CommandMock.restore();
+      assertFalse("use" in Deno.Command);
     });
   });
 });
@@ -72,30 +94,30 @@ describe("CommandSpy", () => {
   let echo: CommandSpy<"echo">;
 
   beforeEach(() => {
-    echo = MockCommand.spy("echo");
+    echo = CommandMock.spy("echo");
   });
 
   it("should be tested with assertSpyCalls", () => {
     assertSpyCalls(echo, 0);
-    new MockCommand("echo");
+    new CommandMock("echo");
     assertSpyCalls(echo, 1);
-    new MockCommand("echo");
+    new CommandMock("echo");
     assertSpyCalls(echo, 2);
   });
 
   it("should be tested with assertSpyCallArg", () => {
-    new MockCommand("echo");
+    new CommandMock("echo");
     assertSpyCallArg(echo, 0, 1, undefined);
-    new MockCommand("echo", { cwd: "/tmp" });
+    new CommandMock("echo", { cwd: "/tmp" });
     assertSpyCallArg(echo, 1, 1, { cwd: "/tmp" });
   });
 
   it("should distinguish between different commands", () => {
-    const ls = MockCommand.spy("ls");
-    new MockCommand("echo");
+    const ls = CommandMock.spy("ls");
+    new CommandMock("echo");
     assertSpyCalls(echo, 1);
     assertSpyCalls(ls, 0);
-    new MockCommand("ls");
+    new CommandMock("ls");
     assertSpyCalls(echo, 1);
     assertSpyCalls(ls, 1);
   });
@@ -105,11 +127,11 @@ describe("CommandStub", () => {
   let echo: CommandStub<"echo">;
 
   beforeEach(() => {
-    echo = MockCommand.stub("echo");
+    echo = CommandMock.stub("echo");
   });
 
   it("should not try to execute the command", async () => {
-    await new MockCommand("echo").output();
+    await new CommandMock("echo").output();
     const { state } = await Deno.permissions.query({
       name: "run",
       command: "echo",
