@@ -1,11 +1,13 @@
 import { describe, it } from "@std/testing/bdd";
-import { CommandMock } from "./cmd.ts";
+import * as cmd from "./cmd.ts";
 import { all } from "./mocks.ts";
 import { assert } from "@std/assert";
 
 describe("all", () => {
+  const CommandOriginal = Deno.Command;
+
   it("should mock all", () => {
-    all(CommandMock).use();
-    assert("use" in Deno.Command);
+    all(cmd).use();
+    assert(Deno.Command !== CommandOriginal);
   });
 });

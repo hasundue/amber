@@ -1,5 +1,5 @@
 import type { ConstructorSpy } from "@std/testing/mock";
-import { spy } from "@std/testing/mock";
+import * as std from "@std/testing/mock";
 
 export interface CommandSpy<Command extends string | URL>
   extends
@@ -15,7 +15,7 @@ export interface CommandStub<Command extends string | URL>
   fake: typeof Deno.Command;
 }
 
-export class CommandDummy extends Deno.Command {
+class CommandDummy extends Deno.Command {
   #output: Deno.CommandOutput = {
     code: 0,
     stdout: new Uint8Array(),
@@ -42,6 +42,37 @@ const spies = new Map<
   >
 >();
 
+export function stub<Command extends string | URL>(
+  command: Command,
+  fake: typeof Deno.Command = CommandDummy,
+): CommandStub<Command> {
+  const spy = std.spy(fake);
+  spies.set(command.toString(), spy);
+  Object.defineProperties(spy, {
+    fake: {
+      enumerable: true,
+      value: fake,
+    },
+    name: {
+      value: "Deno.Command",
+    },
+    [Symbol.dispose]: {
+      value() {
+        spies.delete(command.toString());
+      },
+    },
+  });
+  return spy as unknown as CommandStub<Command>;
+}
+
+export function spy<Command extends string | URL>(
+  command: Command,
+): CommandSpy<Command> {
+  return stub(command, Deno.Command);
+}
+
+const CommandOriginal = Deno.Command;
+
 const CommandProxy: typeof Deno.Command = new Proxy(Deno.Command, {
   construct(target, args) {
     const [command, options] = args as ConstructorParameters<
@@ -56,52 +87,19 @@ const CommandProxy: typeof Deno.Command = new Proxy(Deno.Command, {
   },
 });
 
-export class CommandMock extends CommandProxy {
-  static readonly #Original = Deno.Command;
+export function use(): void;
+export function use<T>(fn: () => T): T;
 
-  static stub<Command extends string | URL>(
-    command: Command,
-    fake: typeof Deno.Command = CommandDummy,
-  ): CommandStub<Command> {
-    const Spy = spy(fake);
-    spies.set(command.toString(), Spy);
-    Object.defineProperties(Spy, {
-      fake: {
-        enumerable: true,
-        value: fake,
-      },
-      name: {
-        value: "Deno.Command",
-      },
-      [Symbol.dispose]: {
-        value() {
-          spies.delete(command.toString());
-        },
-      },
-    });
-    return Spy as unknown as CommandStub<Command>;
+export function use<T>(fn?: () => T) {
+  Deno.Command = CommandProxy;
+  if (!fn) return;
+  try {
+    return fn();
+  } finally {
+    restore();
   }
+}
 
-  static spy<Command extends string | URL>(
-    command: Command,
-  ): CommandSpy<Command> {
-    return this.stub(command, Deno.Command);
-  }
-
-  static use(): void;
-  static use<T>(fn: () => T): T;
-
-  static use<T>(fn?: () => T) {
-    Deno.Command = CommandMock;
-    if (!fn) return;
-    try {
-      return fn();
-    } finally {
-      this.restore();
-    }
-  }
-
-  static restore() {
-    Deno.Command = this.#Original;
-  }
+export function restore() {
+  Deno.Command = CommandOriginal;
 }
