@@ -4,6 +4,7 @@
     "specifiers": {
       "jsr:@std/assert@^0.224.0": "jsr:@std/assert@0.224.0",
       "jsr:@std/assert@^0.225.3": "jsr:@std/assert@0.225.3",
+      "jsr:@std/collections@^0.224.2": "jsr:@std/collections@0.224.2",
       "jsr:@std/fmt@^0.224.0": "jsr:@std/fmt@0.224.0",
       "jsr:@std/internal@^0.224.0": "jsr:@std/internal@0.224.0",
       "jsr:@std/internal@^1.0.0": "jsr:@std/internal@1.0.0",
@@ -22,6 +23,9 @@
         "dependencies": [
           "jsr:@std/internal@^1.0.0"
         ]
+      },
+      "@std/collections@0.224.2": {
+        "integrity": "e77819455294e92d4e7ddad1dbfd46f94174c09318e541e6621fac4a4d0ab326"
       },
       "@std/fmt@0.224.0": {
         "integrity": "e20e9a2312a8b5393272c26191c0a68eda8d2c4b08b046bad1673148f1d69851"
@@ -44,6 +48,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@^0.225.3",
+      "jsr:@std/collections@^0.224.2",
       "jsr:@std/testing@^0.224.0"
     ]
   }

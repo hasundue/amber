@@ -87,19 +87,20 @@ const CommandProxy: typeof Deno.Command = new Proxy(CommandOriginal, {
   },
 });
 
-export function use(): void;
-export function use<T>(fn: () => T): T;
-
-export function use<T>(fn?: () => T) {
-  Deno.Command = CommandProxy;
-  if (!fn) return;
-  try {
-    return fn();
-  } finally {
-    restore();
-  }
-}
-
 export function restore() {
   Deno.Command = CommandOriginal;
+}
+
+export function mock(): Disposable {
+  Deno.Command = CommandProxy;
+  return {
+    [Symbol.dispose]() {
+      restore();
+    },
+  };
+}
+
+export function use<T>(fn: () => T): T {
+  using _ = mock();
+  return fn();
 }

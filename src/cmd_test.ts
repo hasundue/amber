@@ -4,7 +4,7 @@ import { assertSpyCallArg, assertSpyCalls } from "@std/testing/mock";
 import type { CommandSpy, CommandStub } from "./cmd.ts";
 import * as cmd from "./cmd.ts";
 
-describe("use", () => {
+describe("mock", () => {
   const Original = Deno.Command;
 
   afterEach(() => {
@@ -12,10 +12,16 @@ describe("use", () => {
   });
 
   it("should replace Deno.Command", () => {
-    cmd.use();
+    cmd.mock();
     assert(Deno.Command !== Original);
   });
 
+  it("should return a disposable", () => {
+    assert(Symbol.dispose in cmd.mock());
+  });
+});
+
+describe("use", () => {
   it("should replace Deno.Command inside the callback", () => {
     using echo = cmd.spy("echo");
     cmd.use(() => {
@@ -29,7 +35,7 @@ describe("restore", () => {
   const Original = Deno.Command;
 
   it("should restore Deno.Command", () => {
-    cmd.use();
+    cmd.mock();
     cmd.restore();
     assert(Deno.Command === Original);
   });
@@ -50,7 +56,7 @@ describe("stub", () => {
 
   it("should create a stub for a command with a dummy by default", async () => {
     using echo = cmd.stub("echo");
-    cmd.use();
+    cmd.mock();
     await new Deno.Command("echo").output();
     assertSpyCalls(echo, 1);
   });
@@ -68,7 +74,7 @@ describe("stub", () => {
         }
       },
     );
-    cmd.use();
+    cmd.mock();
     assertThrows(() => new Deno.Command("echo"));
   });
 });
@@ -85,7 +91,7 @@ describe("CommandSpy", () => {
   });
 
   it("should be tested with assertSpyCalls", () => {
-    cmd.use();
+    cmd.mock();
     assertSpyCalls(echo, 0);
     new Deno.Command("echo");
     assertSpyCalls(echo, 1);
@@ -94,7 +100,7 @@ describe("CommandSpy", () => {
   });
 
   it("should be tested with assertSpyCallArg", () => {
-    cmd.use();
+    cmd.mock();
     new Deno.Command("echo");
     assertSpyCallArg(echo, 0, 1, undefined);
     new Deno.Command("echo", { cwd: "/tmp" });
@@ -103,7 +109,7 @@ describe("CommandSpy", () => {
 
   it("should distinguish between different commands", () => {
     const ls = cmd.spy("ls");
-    cmd.use();
+    cmd.mock();
     new Deno.Command("echo");
     assertSpyCalls(echo, 1);
     assertSpyCalls(ls, 0);
@@ -118,7 +124,7 @@ describe("CommandStub", () => {
 
   beforeEach(() => {
     echo = cmd.stub("echo");
-    cmd.use();
+    cmd.mock();
   });
 
   it("should not try to execute the command", async () => {

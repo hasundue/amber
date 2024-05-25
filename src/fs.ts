@@ -1,10 +1,13 @@
-export function stub(
-  path: string | URL,
-) {
-  return;
-}
+/**
+ * Mock Deno's file system APIs.
+ *
+ * @module
+ */
 
-const UniPathFns = [
+import type { Spy } from "@std/testing/mock";
+import { pick } from "@std/collections";
+
+const FsOps = [
   "chmod",
   "chown",
   "create",
@@ -19,70 +22,114 @@ const UniPathFns = [
   "realPath",
   "remove",
   "stat",
+  "truncate",
   "utime",
   "writeFile",
   "writeTextFile",
 ] as const;
 
-type UniPathFn = typeof UniPathFns[number];
-type UniPathSyncFn = `${UniPathFn}Sync`;
+type FsOp = typeof FsOps[number];
+type FsSyncOp = `${FsOp}Sync`;
 
-const UniPathSyncFns = UniPathFns
-  .map((name) => name + "Sync") as [UniPathSyncFn];
+const FsSyncOps = FsOps
+  .map((name) => name + "Sync") as [FsSyncOp];
 
-const BiPathFns = [
+const FsMaps = [
   "copyFile",
   "link",
   "rename",
   "symlink",
-  "truncate",
 ] as const;
 
-type BiPathFn = typeof BiPathFns[number];
-type BiPathSyncFn = `${BiPathFn}Sync`;
+type FsMap = typeof FsMaps[number];
+type FsSyncMap = `${FsMap}Sync`;
 
-const BiPathSyncFns = BiPathFns
-  .map((name) => name + "Sync") as [BiPathSyncFn];
+const FsSyncMaps = FsMaps
+  .map((name) => name + "Sync") as [FsSyncMap];
 
-const PathFns = [
-  ...UniPathFns,
-  ...UniPathSyncFns,
-  ...BiPathFns,
-  ...BiPathSyncFns,
+const FsFns = [
+  ...FsOps,
+  ...FsSyncOps,
+  ...FsMaps,
+  ...FsSyncMaps,
 ] as const;
 
-type PathFn = typeof PathFns[number];
+type FsFn = typeof FsFns[number];
 
-export function use(): void;
-export function use<T>(fn: () => T): T;
+/**
+ * A subset of the `Deno` namespace that are related to file system operations.
+ */
+type DenoFs = Pick<typeof Deno, FsFn>;
+const DenoFs: DenoFs = pick(Deno, FsFns);
 
-export function use<T>(fn?: () => T) {
-  for (const name of PathFns) {
-    Deno[name] = () => {
-      throw new Error();
-    };
-  }
-  if (!fn) return;
-  try {
-    return fn();
-  } finally {
-    restore();
-  }
+const spies = new Map<string | URL, unknown>();
+
+interface FileSystemSpy<P extends string | URL> extends Disposable, Spy<FsFn> {
+}
+
+export interface FileSystemStub<P extends string | URL>
+  extends FileSystemSpy<P> {
+  fake: typeof DenoFs;
+}
+
+export function stub(
+  path: string | URL,
+) {
+  const proxy = new Proxy(DenoFs, {
+    get(target, name) {
+      const spy = spies.get(path.toString());
+      if (spy) {
+        return spy;
+      } else {
+        return Reflect.get(target, name);
+      }
+    },
+  });
+}
+
+export function mock(): Disposable {
+  return {
+    [Symbol.dispose]() {
+      restore();
+    },
+  };
+}
+
+export function use<T>(fn: () => T) {
+  using stack = new DisposableStack();
+  stack.use(mock());
+  return fn();
+}
+
+function useUniPathFn<T extends FsFn>(
+  name: T,
+) {
+  Deno[name] = new Proxy(Deno[name], {
+    apply(target, thisArg, args) {
+      const path = args[0] as string | URL;
+      const spy = spies.get(path);
+      if (spy) {
+        return spy;
+      } else {
+        return Reflect.apply(target, thisArg, args);
+      }
+    },
+  });
 }
 
 const PathFnsOrg = Object.fromEntries(
-  PathFns.map((name) => [name, Deno[name]]),
+  FsFns.map((name) => [name, Deno[name]]),
 ) as {
-  [F in PathFn]: typeof Deno[F];
+  [F in FsFn]: typeof Deno[F];
 };
 
 export function restore() {
   Object.entries(PathFnsOrg).forEach(([name, fn]) => {
-    _restore(name as PathFn, fn);
+    _restore(name as FsFn, fn);
   });
 }
 
-function _restore<T extends PathFn>(
+function _restore<T extends FsFn>(
   name: T,
   fn: typeof Deno[T],
 ) {
