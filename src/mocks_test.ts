@@ -7,7 +7,7 @@ describe("all", () => {
   const CommandOriginal = Deno.Command;
 
   it("should mock all", () => {
-    all(cmd).use();
+    all(cmd).mock();
     assert(Deno.Command !== CommandOriginal);
   });
 });

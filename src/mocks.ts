@@ -1,22 +1,25 @@
-export interface MockLike {
-  use<T>(): void;
-  use<T>(fn: () => T): T;
+export interface MockModule {
+  mock(): Disposable;
   restore(): void;
+  use<T>(fn: () => T): T;
 }
 
-export function all(...mocks: MockLike[]): MockLike {
+export function all(...mods: MockModule[]): MockModule {
   return {
-    use<T>(fn?: () => T) {
-      mocks.forEach((mock) => mock.use());
-      if (!fn) return;
-      try {
-        return fn();
-      } finally {
-        this.restore();
-      }
+    mock() {
+      mods.forEach((m) => m.mock());
+      return {
+        [Symbol.dispose]() {
+          mods.forEach((m) => m.restore());
+        },
+      };
+    },
+    use<T>(fn: () => T): T {
+      using _ = this.mock();
+      return fn();
     },
     restore() {
-      mocks.forEach((mock) => mock.restore());
+      mods.forEach((m) => m.restore());
     },
   };
 }
