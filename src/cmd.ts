@@ -56,7 +56,7 @@ export function stub<Command extends string | URL>(
       value: fake,
     },
     name: {
-      value: "Deno.Command",
+      value: CommandOriginal.name,
     },
     [Symbol.dispose]: {
       value() {

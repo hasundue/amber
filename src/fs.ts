@@ -4,10 +4,16 @@
  * @module
  */
 
+import { mapEntries } from "@std/collections";
 import type { Spy } from "@std/testing/mock";
+import * as std from "@std/testing/mock";
 import { pick } from "@std/collections";
 
-const FsOps = [
+/**
+ * The base names of Deno's APIs related to file system operations that takes
+ * a path as the first argument.
+ */
+const FsOpNames = [
   "chmod",
   "chown",
   "create",
@@ -28,63 +34,81 @@ const FsOps = [
   "writeTextFile",
 ] as const;
 
-type FsOp = typeof FsOps[number];
-type FsSyncOp = `${FsOp}Sync`;
+type FsOpName = typeof FsOpNames[number];
+type FsOpSyncName = `${FsOpName}Sync`;
 
-const FsSyncOps = FsOps
-  .map((name) => name + "Sync") as [FsSyncOp];
+/**
+ * The synchronous versions of the file system operations that takes a path as
+ * the first argument.
+ */
+const FsOpSyncNames = FsOpNames
+  .map((name) => name + "Sync") as [FsOpSyncName];
 
-const FsMaps = [
+/**
+ * The base names of Deno's APIs related to file system operations that takes
+ * two paths as the first and second arguments.
+ */
+const FsMapNames = [
   "copyFile",
   "link",
   "rename",
   "symlink",
 ] as const;
 
-type FsMap = typeof FsMaps[number];
-type FsSyncMap = `${FsMap}Sync`;
+type FsMapName = typeof FsMapNames[number];
+type FsMapSyncName = `${FsMapName}Sync`;
 
-const FsSyncMaps = FsMaps
-  .map((name) => name + "Sync") as [FsSyncMap];
+/**
+ * The synchronous versions of the file system operations that takes two paths
+ * as the first and second arguments.
+ */
+const FsMapSyncNames = FsMapNames
+  .map((name) => name + "Sync") as [FsMapSyncName];
 
-const FsFns = [
-  ...FsOps,
-  ...FsSyncOps,
-  ...FsMaps,
-  ...FsSyncMaps,
+/**
+ * The names of Deno's APIs related to file system operations.
+ */
+const FsFnNames = [
+  ...FsOpNames,
+  ...FsOpSyncNames,
+  ...FsMapNames,
+  ...FsMapSyncNames,
 ] as const;
 
-type FsFn = typeof FsFns[number];
+type FsFnName = typeof FsFnNames[number];
 
 /**
  * A subset of the `Deno` namespace that are related to file system operations.
  */
-type DenoFs = Pick<typeof Deno, FsFn>;
-const DenoFs: DenoFs = pick(Deno, FsFns);
+const DenoFs: {
+  [K in FsFnName]: typeof Deno[K];
+} = pick(Deno, FsFnNames);
 
-const spies = new Map<string | URL, unknown>();
-
-interface FileSystemSpy<P extends string | URL> extends Disposable, Spy<FsFn> {
+export interface FileSystemSpy
+  extends Disposable, Spy<typeof Deno[FsFnName]> {
 }
 
-export interface FileSystemStub<P extends string | URL>
-  extends FileSystemSpy<P> {
+export interface FileSystemStub
+  extends FileSystemSpy {
   fake: typeof DenoFs;
 }
 
+const spies = new Map<string | URL, FileSystemSpy>();
+
 export function stub(
   path: string | URL,
-) {
-  const proxy = new Proxy(DenoFs, {
-    get(target, name) {
-      const spy = spies.get(path.toString());
-      if (spy) {
-        return spy;
-      } else {
-        return Reflect.get(target, name);
-      }
-    },
-  });
+  fake: typeof DenoFs,
+): FileSystemStub {
+  const spies = mapEntries(fake, ([name]) => [
+    name,
+    std.spy(fake, name as FsFnName),
+  ]);
+}
+
+export function spy(
+  path: string | URL,
+): FileSystemSpy {
+  return stub(path, DenoFs);
 }
 
 export function mock(): Disposable {
@@ -104,7 +128,7 @@ export function use<T>(fn: () => T) {
   }
 }
 
-function useUniPathFn<T extends FsFn>(
+function mockFsOp<T extends FsOpName | FsOpSyncName>(
   name: T,
 ) {
   Deno[name] = new Proxy(Deno[name], {
@@ -120,19 +144,19 @@ function useUniPathFn<T extends FsFn>(
   });
 }
 
-const PathFnsOrg = Object.fromEntries(
-  FsFns.map((name) => [name, Deno[name]]),
+const FsFnOriginal = Object.fromEntries(
+  FsFnNames.map((name) => [name, Deno[name]]),
 ) as {
-  [F in FsFn]: typeof Deno[F];
+  [Name in FsFnName]: typeof Deno[Name];
 };
 
 export function restore() {
-  Object.entries(PathFnsOrg).forEach(([name, fn]) => {
-    _restore(name as FsFn, fn);
+  Object.entries(FsFnOriginal).forEach(([name, fn]) => {
+    restoreFsFn(name as FsFnName, fn);
   });
 }
 
-function _restore<T extends FsFn>(
+function restoreFsFn<T extends FsFnName>(
   name: T,
   fn: typeof Deno[T],
 ) {
