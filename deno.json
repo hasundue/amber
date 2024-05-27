@@ -16,5 +16,8 @@
     "@std/collections": "jsr:@std/collections@^0.224.2",
     "@std/path": "jsr:@std/path@^0.225.1",
     "@std/testing": "jsr:@std/testing@^0.224.0"
+  },
+  "tasks": {
+    "test": "deno test --allow-read --allow-write=/tmp --no-check",
   }
 }
