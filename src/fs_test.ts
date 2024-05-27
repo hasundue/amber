@@ -29,10 +29,10 @@ describe("use", () => {
 });
 
 describe("FileSystemSpy", () => {
-  let root: FileSystemSpy;
+  let spy: FileSystemSpy;
 
   beforeEach(() => {
-    root = fs.spy(new URL("../", import.meta.url));
+    spy = fs.spy(new URL("../", import.meta.url));
     fs.mock();
   });
 
@@ -42,11 +42,11 @@ describe("FileSystemSpy", () => {
 
   it("should be testable with assertSpyCalls", async () => {
     await Deno.readTextFile(new URL("../README.md", import.meta.url));
-    assertSpyCalls(root, 1);
+    assertSpyCalls(spy.readTextFile, 1);
   });
 
   it("should be testable with assertSpyCall", async () => {
     await Deno.readTextFile(new URL("../README.md", import.meta.url));
-    assertSpyCall(root, 0, { self: Deno.readTextFile, args: ["../README.md"] });
+    assertSpyCall(spy.readTextFile, 0, { args: ["../README.md"] });
   });
 });
