@@ -151,12 +151,13 @@ export interface FileSystemStub extends FileSystemSpy {
  * Dummy implementations of Deno's file system APIs that redirect the operations
  * to a temporary directory.
  */
-const DenoFsDummy = (temp: string): typeof DenoFs => {
+const DenoFsDummy = (base: string | URL, temp: string): typeof DenoFs => {
   const FsOpDummy = mapEntries(DenoFsOp, ([name, fn]) => {
     return [
       name,
       new Proxy(fn, {
         apply(target, thisArg, args) {
+          console.log(args);
           return Reflect.apply(target, thisArg, [
             new URL(args[0] as string | URL, temp),
             ...args.slice(1),
@@ -205,7 +206,7 @@ export function stub(
   fake: Partial<typeof DenoFs> = {},
 ): FileSystemStub {
   const temp = DenoFs.makeTempDirSync();
-  const dummy = DenoFsDummy(temp);
+  const dummy = DenoFsDummy(path, temp);
 
   // TODO: Replace DenoFsOp with DenoFs
   const spy = mapEntries(DenoFsOp, ([key]) => {
