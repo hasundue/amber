@@ -11,6 +11,9 @@ export function isUnder(
   return toPath(path).startsWith(toPath(base));
 }
 
+/**
+ * Return the relative path from the first path to the second path.
+ */
 export function relative(
   from: string | URL,
   to: string | URL,

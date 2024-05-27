@@ -4,10 +4,11 @@
  * @module
  */
 
-import { mapEntries, pick } from "@std/collections";
+import { mapEntries, mapValues, pick } from "@std/collections";
 import type { Spy } from "@std/testing/mock";
 import * as std from "@std/testing/mock";
-import { isUnder } from "./internal.ts";
+import { join } from "@std/path";
+import { isUnder, relative } from "./internal.ts";
 
 /**
  * The base names of Deno's APIs related to file system operations that takes
@@ -45,14 +46,6 @@ const FsOpSyncNames = FsOpNames
   .map((name) => name + "Sync") as [FsOpSyncName];
 
 /**
- * A subset of the `Deno` namespace that are related to file system operations
- * that takes a path as the first argument.
- */
-const DenoFsOp: {
-  [K in FsOpName]: typeof Deno[K];
-} = pick(Deno, FsOpNames);
-
-/**
  * The base names of Deno's APIs related to file system operations that takes
  * two paths as the first and second arguments.
  */
@@ -74,20 +67,12 @@ const FsMapSyncNames = FsMapNames
   .map((name) => name + "Sync") as [FsMapSyncName];
 
 /**
- * A subset of the `Deno` namespace that are related to file system operations
- * that takes two paths as the first and second arguments.
- */
-const DenoFsMap: {
-  [K in FsMapName]: typeof Deno[K];
-} = pick(Deno, FsMapNames);
-
-/**
  * The base names of Deno APIs related to file system operations that does not
  * take a path as an argument.
  */
 const FsSysNames = [
-  "flock",
-  "funlock",
+  // "flock",
+  // "funlock",
   "fstat",
   "ftruncate",
   "futime",
@@ -152,38 +137,17 @@ export interface FileSystemStub extends FileSystemSpy {
  * to a temporary directory.
  */
 const DenoFsDummy = (base: string | URL, temp: string): typeof DenoFs => {
-  const FsOpDummy = mapEntries(DenoFsOp, ([name, fn]) => {
-    return [
-      name,
-      new Proxy(fn, {
-        apply(target, thisArg, args) {
-          console.log(args);
-          return Reflect.apply(target, thisArg, [
-            new URL(args[0] as string | URL, temp),
-            ...args.slice(1),
-          ]);
-        },
-      }),
-    ];
-  }) as typeof DenoFsOp;
-  const FsMapDummy = mapEntries(DenoFsMap, ([name, fn]) => {
-    return [
-      name,
-      new Proxy(fn, {
-        apply(target, thisArg, args) {
-          return Reflect.apply(target, thisArg, [
-            new URL(args[0] as string | URL, temp),
-            new URL(args[1] as string | URL, temp),
-            ...args.slice(2),
-          ]);
-        },
-      }),
-    ];
-  }) as typeof DenoFsMap;
-  return {
-    ...FsOpDummy,
-    ...FsMapDummy,
-  };
+  const redirect = (path: string | URL) => join(temp, relative(base, path));
+  return mapValues(DenoFs, (fn, name) =>
+    new Proxy(fn, {
+      apply(target, thisArg, args) {
+        return Reflect.apply(target, thisArg, [
+          FsSysNames.includes(name as FsSysName) ? args[0] : redirect(args[0]),
+          FsMapNames.includes(name as FsMapName) ? redirect(args[1]) : args[1],
+          ...args.slice(2),
+        ]);
+      },
+    })) as typeof DenoFs;
 };
 
 /**
@@ -209,25 +173,33 @@ export function stub(
   const dummy = DenoFsDummy(path, temp);
 
   // TODO: Replace DenoFsOp with DenoFs
-  const spy = mapEntries(DenoFsOp, ([key]) => {
+  const spy = mapEntries(DenoFs, ([key]) => {
     const name = key as FsFnName;
     return [
       key,
       fake[name] ? std.spy(fake, name) : std.spy(dummy, name),
     ];
-  }) as unknown as DenoFsSpy;
+  });
 
-  spies.set(path, spy);
+  Object.defineProperties(spy, {
+    path: {
+      enumerable: true,
+      value: path,
+    },
+    [Symbol.dispose]: {
+      value() {
+        spies.delete(path);
+      },
+    },
+  });
+
+  spies.set(path, spy as unknown as FileSystemSpy);
 
   return {
     ...spy,
     fake: { ...dummy, ...fake },
-    path,
     temp,
-    [Symbol.dispose]() {
-      spies.delete(path);
-    },
-  };
+  } as FileSystemStub;
 }
 
 export function spy(
