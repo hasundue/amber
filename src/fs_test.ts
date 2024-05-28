@@ -4,19 +4,20 @@ import type { FileSystemSpy } from "./fs.ts";
 import * as fs from "./fs.ts";
 import { assert } from "@std/assert";
 
-describe("restore", () => {
-  it("should be callable", () => {
-    fs.restore();
-  });
-});
-
 describe("mock", () => {
+  const Original = Deno.readTextFile;
+
   afterEach(() => {
     fs.restore();
   });
 
   it("should return a disposable", () => {
     assert(Symbol.dispose in fs.mock());
+  });
+
+  it("should replace file system functions", () => {
+    fs.mock();
+    assert(Deno.readTextFile !== Original);
   });
 });
 
@@ -26,9 +27,35 @@ describe("use", () => {
   });
 });
 
+describe("restore", () => {
+  const Original = Deno.readTextFile;
+  it("should restore the Deno namespace", () => {
+    fs.mock();
+    fs.restore();
+    assert(Deno.readTextFile === Original);
+  });
+});
+
+describe("spy", () => {
+  afterEach(() => {
+    fs.restore();
+  });
+
+  it("should create a FileSystemSpy", async () => {
+    using spy = fs.spy(new URL("../", import.meta.url));
+    fs.mock();
+    await Deno.readTextFile(new URL("../README.md", import.meta.url));
+    assertSpyCalls(spy.readTextFile, 1);
+  });
+});
+
 describe.only("stub", () => {
-  it("should create a FileSystemStub", async () => {
-    const stub = fs.stub(new URL("../", import.meta.url));
+  afterEach(() => {
+    fs.restore();
+  });
+
+  it("should stub filesystem functions", async () => {
+    using stub = fs.stub(new URL("../", import.meta.url));
     fs.mock();
     await Deno.readTextFile(new URL("../README.md", import.meta.url));
     assertSpyCalls(stub.readTextFile, 1);

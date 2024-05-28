@@ -138,14 +138,22 @@ export interface FileSystemStub extends FileSystemSpy {
  */
 const DenoFsDummy = (base: string | URL, temp: string): typeof DenoFs => {
   const redirect = (path: string | URL) => join(temp, relative(base, path));
+  const is = (name: string, arr: readonly string[]) => arr.includes(name);
   return mapValues(DenoFs, (fn, name) =>
     new Proxy(fn, {
       apply(target, thisArg, args) {
-        return Reflect.apply(target, thisArg, [
-          FsSysNames.includes(name as FsSysName) ? args[0] : redirect(args[0]),
-          FsMapNames.includes(name as FsMapName) ? redirect(args[1]) : args[1],
-          ...args.slice(2),
-        ]);
+        try {
+          return Reflect.apply(target, thisArg, [
+            is(name, FsSysNames) ? args[0] : redirect(args[0]),
+            is(name, FsMapNames) ? redirect(args[1]) : args[1],
+            ...args.slice(2),
+          ]);
+        } catch (err) {
+          if (err instanceof Deno.errors.NotFound) {
+            return Reflect.apply(target, thisArg, args);
+          }
+          throw err;
+        }
       },
     })) as typeof DenoFs;
 };
@@ -172,34 +180,42 @@ export function stub(
   const temp = DenoFs.makeTempDirSync();
   const dummy = DenoFsDummy(path, temp);
 
-  // TODO: Replace DenoFsOp with DenoFs
   const spy = mapEntries(DenoFs, ([key]) => {
     const name = key as FsFnName;
     return [
       key,
       fake[name] ? std.spy(fake, name) : std.spy(dummy, name),
     ];
-  });
+  }) as unknown as DenoFsSpy;
 
   Object.defineProperties(spy, {
     path: {
       enumerable: true,
       value: path,
     },
+    fake: {
+      enumerable: true,
+      value: { ...dummy, ...fake },
+    },
+    temp: {
+      enumerable: true,
+      value: temp,
+    },
     [Symbol.dispose]: {
       value() {
+        Object.values(spy).forEach((spy) => {
+          if (typeof spy.restore === "function") spy.restore();
+        });
         spies.delete(path);
+        Deno.removeSync(temp, { recursive: true });
       },
     },
   });
 
-  spies.set(path, spy as unknown as FileSystemSpy);
+  const stub = spy as unknown as FileSystemStub;
+  spies.set(path, stub);
 
-  return {
-    ...spy,
-    fake: { ...dummy, ...fake },
-    temp,
-  } as FileSystemStub;
+  return stub;
 }
 
 export function spy(
