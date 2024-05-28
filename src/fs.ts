@@ -44,8 +44,6 @@ type FsOpSyncName = `${FsOpBaseName}Sync`;
 const FsOpSyncNames = FsOpBaseNames
   .map((name) => name + "Sync") as [FsOpSyncName];
 
-type FsOpName = FsOpBaseName | FsOpSyncName;
-
 const FsOpNames = [
   ...FsOpBaseNames,
   ...FsOpSyncNames,
@@ -79,48 +77,16 @@ const FsMapNames = [
   ...FsMapSyncNames,
 ] as const;
 
-/**
- * The base names of Deno APIs related to file system operations that does not
- * take a path as an argument.
- */
-const FsSysBaseNames = [
-  // "flock",
-  // "funlock",
-  "fstat",
-  "fdatasync",
-  "ftruncate",
-  "futime",
-  "makeTempDir",
-  // "umask",
-] as const;
-
-type FsSysBaseName = typeof FsSysBaseNames[number];
-type FsSysSyncName = `${FsSysBaseName}Sync`;
-
-const FsSysSyncNames = FsSysBaseNames
-  .map((name) => name + "Sync") as [FsSysSyncName];
-
-type FsSysName = FsSysBaseName | FsSysSyncName;
-
-const FsSysNames = [
-  ...FsSysBaseNames,
-  ...FsSysSyncNames,
-] as const;
-
 /** The names of Deno's APIs related to file system operations. */
 const FsFnNames = [
   ...FsOpNames,
   ...FsMapNames,
-  ...FsSysNames,
 ] as const;
 
 type FsFnName = typeof FsFnNames[number];
 
 const isFsMap = (name: FsFnName): name is FsMapName =>
   FsMapNames.includes(name as FsMapName);
-
-const isFsSys = (name: FsFnName): name is FsSysName =>
-  FsSysNames.includes(name as FsSysName);
 
 /** A subset of the `Deno` namespace that are related to file system operations. */
 type Fs = {
@@ -158,19 +124,28 @@ function createFsFake(
   const redirect = (path: string | URL) => join(temp, relative(base, path));
   return mapValues(
     fs,
-    (fn, name) => (...args: Parameters<typeof fn>) =>
-      tryOr(() =>
-        fn(
-          isFsSys(name) ? args[0] : redirect(args[0] as string | URL),
-          isFsMap(name) ? redirect(args[1] as string | URL) : args[1],
-          // @ts-ignore allow passing a spread argument
-          ...args.slice(2),
-        ), (err) => {
-        if (readThrough && err instanceof Deno.errors.NotFound) {
-          // @ts-ignore allow passing a spread argument
-          return fn(...args);
-        }
-        throw err;
+    (fn, name) =>
+      new Proxy(fn, {
+        apply(target, thisArg, args) {
+          tryOr(
+            () =>
+              Reflect.apply(target, thisArg, [
+                redirect(args[0]),
+                isFsMap(name) ? redirect(args[1]) : args[1],
+                ...args.slice(2),
+              ]),
+            (err) => {
+              if (readThrough && err instanceof Deno.errors.NotFound) {
+                return Reflect.apply(target, thisArg, [
+                  args[0],
+                  isFsMap(name) ? redirect(args[1]) : args[1],
+                  ...args.slice(2),
+                ]);
+              }
+              throw err;
+            },
+          );
+        },
       }),
   ) as Fs;
 }
@@ -218,7 +193,7 @@ export function stub(
   path: string | URL,
   fakeOrOptions?: Partial<Fs> | StubOptions,
 ): FileSystemStub {
-  const temp = fs.makeTempDirSync();
+  const temp = Deno.makeTempDirSync();
 
   const fake = isStubOptions(fakeOrOptions)
     ? createFsFake(path, temp, fakeOrOptions?.readThrough ?? true)
@@ -252,8 +227,9 @@ export function spy(
 }
 
 export function mock(): Disposable {
-  FsOpNames.forEach(mockFsOp);
-  FsMapNames.forEach(mockFsMap);
+  for (const name of FsFnNames) {
+    mockFsFn(name);
+  }
   return {
     [Symbol.dispose]() {
       restore();
@@ -261,29 +237,14 @@ export function mock(): Disposable {
   };
 }
 
-function mockFsOp<T extends FsOpName>(
-  name: T,
-) {
-  Object.defineProperty(Deno, name, {
-    value(...args: Parameters<Fs[T]>) {
+function mockFsFn<T extends FsFnName>(name: T) {
+  Deno[name] = new Proxy(Deno[name], {
+    apply(target, thisArg, args) {
       const spy = spies.get(args[0])?.[name];
       if (spy) {
-        return spy.bind(spy)(...args);
+        return Reflect.apply(spy, thisArg, args);
       }
-      // @ts-ignore allow passing a spread argument
-      return fs[name](...args);
-    },
-  });
-}
-
-function mockFsMap<T extends FsMapName>(
-  name: T,
-) {
-  Object.defineProperty(Deno, name, {
-    value() {
-      throw new Deno.errors.NotSupported(
-        "Mocking functions that take two paths as arguments is not supported yet.",
-      );
+      return Reflect.apply(target, thisArg, args);
     },
   });
 }
