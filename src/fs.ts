@@ -101,7 +101,7 @@ const fs = createFs();
 
 /** A record of spies for the file system operations. */
 type FsSpy = {
-  [K in FsFnName]: Spy<typeof Deno[K]>;
+  [K in FsFnName]?: Spy<typeof Deno[K]>;
 };
 
 /** A record of spies for Deno APIs related to file system operations. */
@@ -127,7 +127,7 @@ function createFsFake(
     (fn, name) =>
       new Proxy(fn, {
         apply(target, thisArg, args) {
-          tryOr(
+          return tryOr(
             () =>
               Reflect.apply(target, thisArg, [
                 redirect(args[0]),
@@ -199,22 +199,16 @@ export function stub(
     ? createFsFake(path, temp, fakeOrOptions?.readThrough ?? true)
     : fakeOrOptions ?? {};
 
-  const stub = {} as FileSystemStub;
-
-  for (const name of FsFnNames) {
-    Object.defineProperty(stub, name, {
-      configurable: true,
-      enumerable: true,
-      value: std.spy(fake, name),
-    });
-  }
-
-  Object.defineProperty(stub, Symbol.dispose, {
-    value() {
+  const stub = {
+    ...mapValues(
+      fake,
+      (_, name) => std.spy(fake, name),
+    ),
+    [Symbol.dispose]: () => {
       spies.delete(path);
       fs.removeSync(temp, { recursive: true });
     },
-  });
+  } as FileSystemStub;
 
   spies.set(path, stub);
   return stub;
