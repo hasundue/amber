@@ -153,6 +153,23 @@ it("should be able to spy multiple paths separately", async () => {
 #### `stub`
 
 ```typescript
+it("should not write to the original path", async () => {
+  using stub = fs.stub(new URL("../", import.meta.url));
+  fs.mock();
+  await Deno.writeTextFile(
+    new URL("../test.txt", import.meta.url),
+    "amber",
+  );
+  assertEquals(
+    Deno.permissions.querySync({
+      name: "write",
+      path: new URL("../test.txt", import.meta.url),
+    }).state,
+    "prompt",
+  );
+  assertSpyCalls(stub.writeTextFile, 1);
+});
+
 it("should allow original files to be read initially (readThrough)", async () => {
   using stub = fs.stub(new URL("../", import.meta.url));
   fs.mock();
@@ -179,23 +196,6 @@ it("should throw on a file that has not been written if readThrough is disabled"
   assertThrows(() =>
     Deno.readTextFileSync(new URL("../README.md", import.meta.url))
   );
-});
-
-it("should not try to write to the original path", async () => {
-  using stub = fs.stub(new URL("../", import.meta.url));
-  fs.mock();
-  await Deno.writeTextFile(
-    new URL("../test.txt", import.meta.url),
-    "amber",
-  );
-  assertEquals(
-    Deno.permissions.querySync({
-      name: "write",
-      path: new URL("../test.txt", import.meta.url),
-    }).state,
-    "prompt",
-  );
-  assertSpyCalls(stub.writeTextFile, 1);
 });
 
 it("should be able to stub multiple paths separately", async () => {
