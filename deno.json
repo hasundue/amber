@@ -1,6 +1,6 @@
 {
   "name": "@hasundue/amber",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "exports": {
     ".": "./src/mod.ts",
     "./cmd": "./src/cmd.ts",
