@@ -1,11 +1,11 @@
-import { assert } from "@std/assert";
+import { assert, assertThrows } from "@std/assert";
 import { afterAll, afterEach, beforeAll, describe, it } from "@std/testing/bdd";
 import { assertSpyCall, assertSpyCalls } from "@std/testing/mock";
 import type { FileSystemSpy } from "./fs.ts";
 import * as fs from "./fs.ts";
 
 describe("mock", () => {
-  const Original = Deno.readTextFile;
+  const original = { ...Deno };
 
   afterEach(() => {
     fs.restore();
@@ -17,7 +17,8 @@ describe("mock", () => {
 
   it("should replace file system functions", () => {
     fs.mock();
-    assert(Deno.readTextFile !== Original);
+    assert(Deno.readTextFile !== original.readTextFile);
+    assert(Deno.readTextFileSync !== original.readTextFileSync);
   });
 });
 
@@ -63,11 +64,17 @@ describe("stub", () => {
     fs.restore();
   });
 
-  it("should stub filesystem functions", async () => {
+  it("should stub file system functions with readThrough by default", async () => {
     using stub = fs.stub(new URL("../", import.meta.url));
     fs.mock();
     await Deno.readTextFile(new URL("../README.md", import.meta.url));
     assertSpyCalls(stub.readTextFile, 1);
+  });
+
+  it("should throws for a non-existent path if readThrough is disabled", () => {
+    using _ = fs.stub(new URL("../", import.meta.url), { readThrough: false });
+    fs.mock();
+    assertThrows(() => Deno.readTextFileSync(new URL("../README.md", import.meta.url)));
   });
 
   it("should be able to stub multiple paths", async () => {
