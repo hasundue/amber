@@ -9,7 +9,7 @@ A library for mocking [Deno APIs](https://deno.land/api) with ease.
 
 ## Submodules
 
-### cmd
+### Command
 
 ```typescript
 import * as cmd from "jsr:@chiezo/amber/cmd";
@@ -93,7 +93,7 @@ it("should restore Deno.Command", () => {
 });
 ```
 
-### fs
+### File System
 
 ```typescript
 import * as fs from "jsr:@chiezo/amber/fs";
