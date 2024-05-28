@@ -2,7 +2,7 @@
   "name": "@hasundue/amber",
   "version": "0.1.0",
   "exports": {
-    ".": "./mod.ts",
+    ".": "./src/mod.ts",
     "./cmd": "./src/cmd.ts",
     "./fs": "./src/fs.ts"
   },

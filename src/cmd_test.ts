@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertThrows } from "@std/assert";
 import { afterEach, beforeEach, describe, it } from "@std/testing/bdd";
 import { assertSpyCallArg, assertSpyCalls } from "@std/testing/mock";
-import type { CommandSpy, CommandStub } from "./cmd.ts";
+import type { CommandSpy } from "./cmd.ts";
 import * as cmd from "./cmd.ts";
 
 describe("mock", () => {
@@ -58,6 +58,10 @@ describe("stub", () => {
     using echo = cmd.stub("echo");
     cmd.mock();
     await new Deno.Command("echo").output();
+    assertEquals(
+      Deno.permissions.querySync({ name: "run", command: "echo" }).state,
+      "prompt",
+    );
     assertSpyCalls(echo, 1);
   });
 
@@ -65,11 +69,8 @@ describe("stub", () => {
     cmd.stub(
       "echo",
       class extends Deno.Command {
-        constructor(
-          command: string | URL,
-          options?: Deno.CommandOptions,
-        ) {
-          super(command, options);
+        constructor(command: string | URL) {
+          super(command);
           throw new Error();
         }
       },
@@ -114,23 +115,5 @@ describe("CommandSpy", () => {
     new Deno.Command("ls");
     assertSpyCalls(echo, 1);
     assertSpyCalls(ls, 1);
-  });
-});
-
-describe("CommandStub", () => {
-  let echo: CommandStub<"echo">;
-
-  beforeEach(() => {
-    echo = cmd.stub("echo");
-    cmd.mock();
-  });
-
-  it("should not try to execute the command", async () => {
-    await new Deno.Command("echo").output();
-    assertEquals(
-      Deno.permissions.querySync({ name: "run", command: "echo" }).state,
-      "prompt",
-    );
-    assertSpyCalls(echo, 1);
   });
 });

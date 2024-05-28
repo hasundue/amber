@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertThrows } from "@std/assert";
 import { afterAll, afterEach, beforeAll, describe, it } from "@std/testing/bdd";
 import { assertSpyCall, assertSpyCalls } from "@std/testing/mock";
-import type { FileSystemSpy, FileSystemStub } from "./fs.ts";
+import type { FileSystemSpy } from "./fs.ts";
 import * as fs from "./fs.ts";
 
 describe("mock", () => {
@@ -25,7 +25,7 @@ describe("mock", () => {
 describe("use", () => {
   const original = { ...Deno };
 
-  it("should replace filesystem functions within the callback", () => {
+  it("should replace file system functions within the callback", () => {
     fs.use(() => {
       assert(Deno.readTextFile !== original.readTextFile);
       assert(Deno.readTextFileSync !== original.readTextFileSync);
@@ -56,7 +56,7 @@ describe("spy", () => {
     assertSpyCalls(spy.readTextFile, 1);
   });
 
-  it("should be able to spy multiple paths", async () => {
+  it("should be able to spy multiple paths separately", async () => {
     using cwd = fs.spy(new URL(".", import.meta.url));
     using root = fs.spy(new URL("../", import.meta.url));
     fs.mock();
@@ -71,14 +71,31 @@ describe("stub", () => {
     fs.restore();
   });
 
-  it("should stub file system functions with readThrough by default", async () => {
+  it("should allow users to read original files (readThrough)", async () => {
     using stub = fs.stub(new URL("../", import.meta.url));
     fs.mock();
     await Deno.readTextFile(new URL("../README.md", import.meta.url));
     assertSpyCalls(stub.readTextFile, 1);
   });
 
-  it("should throws for a non-existent path if readThrough is disabled", () => {
+  it("should not try to write to the original path", async () => {
+    using stub = fs.stub(new URL("../", import.meta.url));
+    fs.mock();
+    await Deno.writeTextFile(
+      new URL("../test.txt", import.meta.url),
+      "amber",
+    );
+    assertEquals(
+      Deno.permissions.querySync({
+        name: "write",
+        path: new URL("../test.txt", import.meta.url),
+      }).state,
+      "prompt",
+    );
+    assertSpyCalls(stub.writeTextFile, 1);
+  });
+
+  it("should throw on a non-existent path if readThrough is disabled", () => {
     using _ = fs.stub(new URL("../", import.meta.url), { readThrough: false });
     fs.mock();
     assertThrows(() =>
@@ -86,7 +103,7 @@ describe("stub", () => {
     );
   });
 
-  it("should be able to stub multiple paths", async () => {
+  it("should be able to stub multiple paths separately", async () => {
     using cwd = fs.stub(new URL(".", import.meta.url));
     using root = fs.stub(new URL("../", import.meta.url));
     fs.mock();
@@ -118,34 +135,5 @@ describe("FileSystemSpy", () => {
     const url = new URL("../README.md", import.meta.url);
     await Deno.readTextFile(url);
     assertSpyCall(spy.readTextFile, 0, { args: [url] });
-  });
-});
-
-describe("FileSystemStub", () => {
-  let stub: FileSystemStub;
-
-  beforeAll(() => {
-    stub = fs.stub(new URL("../", import.meta.url));
-    fs.mock();
-  });
-
-  afterAll(() => {
-    stub[Symbol.dispose]();
-    fs.restore();
-  });
-
-  it("should not try to write to the file system", async () => {
-    await Deno.writeTextFile(
-      new URL("../test.txt", import.meta.url),
-      "amber",
-    );
-    assertEquals(
-      Deno.permissions.querySync({
-        name: "write",
-        path: new URL("../test.txt", import.meta.url),
-      }).state,
-      "prompt",
-    );
-    assertSpyCalls(stub.writeTextFile, 1);
   });
 });
