@@ -12,7 +12,7 @@ describe("all", () => {
   });
 
   describe("mock", () => {
-    it("should mock all modules", () => {
+    it("should mock multiple modules at the same time", () => {
       all(cmd, fs).mock();
       assert(Deno.Command !== original.Command);
       assert(Deno.readTextFile !== original.readTextFile);
@@ -20,7 +20,7 @@ describe("all", () => {
   });
 
   describe("use", () => {
-    it("should use all modules", () => {
+    it("should use multiple modules at the same time", () => {
       all(cmd, fs).use(() => {
         assert(Deno.Command !== original.Command);
         assert(Deno.readTextFile !== original.readTextFile);
@@ -29,7 +29,7 @@ describe("all", () => {
   });
 
   describe("restore", () => {
-    it("should restore all modules", () => {
+    it("should restore multiple modules at the same time", () => {
       all(cmd, fs).mock();
       all(cmd, fs).restore();
       assert(Deno.Command === original.Command);

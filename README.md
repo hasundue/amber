@@ -208,6 +208,20 @@ it("should be able to stub multiple paths separately", async () => {
 });
 ```
 
+#### `restore`
+
+```typescript
+const original = { ...Deno };
+
+it("should restore the Deno namespace", () => {
+  fs.mock();
+  fs.restore();
+  assert(Deno.readTextFile === original.readTextFile);
+  assert(Deno.readTextFileSync === original.readTextFileSync);
+  // ...and others
+});
+```
+
 ### Utilities
 
 ```typescript
@@ -220,7 +234,7 @@ import { all } from "jsr:@chiezo/amber";
 const original = { ...Deno };
 
 describe("mock", () => {
-  it("should mock all modules", () => {
+  it("should mock multiple modules at the same time", () => {
     all(cmd, fs).mock();
     assert(Deno.Command !== original.Command);
     assert(Deno.readTextFile !== original.readTextFile);
@@ -228,7 +242,7 @@ describe("mock", () => {
 });
 
 describe("use", () => {
-  it("should use all modules", () => {
+  it("should use multiple modules at the same time", () => {
     all(cmd, fs).use(() => {
       assert(Deno.Command !== original.Command);
       assert(Deno.readTextFile !== original.readTextFile);
@@ -237,7 +251,7 @@ describe("use", () => {
 });
 
 describe("restore", () => {
-  it("should restore all modules", () => {
+  it("should restore multiple modules at the same time", () => {
     all(cmd, fs).mock();
     all(cmd, fs).restore();
     assert(Deno.Command === original.Command);
