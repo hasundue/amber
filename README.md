@@ -2,12 +2,15 @@
 
 A library for mocking [Deno APIs](https://deno.land/api) with ease.
 
+> [!WARNING]\
+> Alpha version. Not tested extensively or documented well yet.
+
 ## Features
 
 - Compatible with [@std/testing](https://jsr.io/@std/testing)
-- Consistent interface across submodules
+- Consistent interfaces across submodules
 
-## Submodules
+## Usage
 
 ### Command
 
