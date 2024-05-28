@@ -101,7 +101,7 @@ const fs = createFs();
 
 /** A record of spies for the file system operations. */
 type FsSpy = {
-  [K in FsFnName]?: Spy<typeof Deno[K]>;
+  [K in FsFnName]: Spy<typeof Deno[K]>;
 };
 
 /** A record of spies for Deno APIs related to file system operations. */
@@ -201,8 +201,8 @@ export function stub(
 
   const stub = {
     ...mapValues(
-      fake,
-      (_, name) => std.spy(fake, name),
+      fs,
+      (fn, name) => fake[name] ? std.spy(fake, name) : fn,
     ),
     [Symbol.dispose]: () => {
       spies.delete(path);

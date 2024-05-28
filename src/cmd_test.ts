@@ -127,11 +127,10 @@ describe("CommandStub", () => {
 
   it("should not try to execute the command", async () => {
     await new Deno.Command("echo").output();
-    const { state } = await Deno.permissions.query({
-      name: "run",
-      command: "echo",
-    });
-    assertEquals(state, "prompt");
+    assertEquals(
+      Deno.permissions.querySync({ name: "run", command: "echo" }).state,
+      "prompt",
+    );
     assertSpyCalls(echo, 1);
   });
 });

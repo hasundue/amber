@@ -1,7 +1,7 @@
-import { assert, assertThrows } from "@std/assert";
+import { assert, assertEquals, assertThrows } from "@std/assert";
 import { afterAll, afterEach, beforeAll, describe, it } from "@std/testing/bdd";
 import { assertSpyCall, assertSpyCalls } from "@std/testing/mock";
-import type { FileSystemSpy } from "./fs.ts";
+import type { FileSystemSpy, FileSystemStub } from "./fs.ts";
 import * as fs from "./fs.ts";
 
 describe("mock", () => {
@@ -23,17 +23,24 @@ describe("mock", () => {
 });
 
 describe("use", () => {
-  it("should be callable with a callback", () => {
-    fs.use(() => {});
+  const original = { ...Deno };
+
+  it("should replace filesystem functions within the callback", () => {
+    fs.use(() => {
+      assert(Deno.readTextFile !== original.readTextFile);
+      assert(Deno.readTextFileSync !== original.readTextFileSync);
+    });
   });
 });
 
 describe("restore", () => {
-  const Original = Deno.readTextFile;
+  const original = { ...Deno };
+
   it("should restore the Deno namespace", () => {
     fs.mock();
     fs.restore();
-    assert(Deno.readTextFile === Original);
+    assert(Deno.readTextFile === original.readTextFile);
+    assert(Deno.readTextFileSync === original.readTextFileSync);
   });
 });
 
@@ -111,5 +118,34 @@ describe("FileSystemSpy", () => {
     const url = new URL("../README.md", import.meta.url);
     await Deno.readTextFile(url);
     assertSpyCall(spy.readTextFile, 0, { args: [url] });
+  });
+});
+
+describe("FileSystemStub", () => {
+  let stub: FileSystemStub;
+
+  beforeAll(() => {
+    stub = fs.stub(new URL("../", import.meta.url));
+    fs.mock();
+  });
+
+  afterAll(() => {
+    stub[Symbol.dispose]();
+    fs.restore();
+  });
+
+  it("should not try to write to the file system", async () => {
+    await Deno.writeTextFile(
+      new URL("../test.txt", import.meta.url),
+      "amber",
+    );
+    assertEquals(
+      Deno.permissions.querySync({
+        name: "write",
+        path: new URL("../test.txt", import.meta.url),
+      }).state,
+      "prompt",
+    );
+    assertSpyCalls(stub.writeTextFile, 1);
   });
 });
