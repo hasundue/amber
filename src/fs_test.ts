@@ -74,7 +74,9 @@ describe("stub", () => {
   it("should throws for a non-existent path if readThrough is disabled", () => {
     using _ = fs.stub(new URL("../", import.meta.url), { readThrough: false });
     fs.mock();
-    assertThrows(() => Deno.readTextFileSync(new URL("../README.md", import.meta.url)));
+    assertThrows(() =>
+      Deno.readTextFileSync(new URL("../README.md", import.meta.url))
+    );
   });
 
   it("should be able to stub multiple paths", async () => {
