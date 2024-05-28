@@ -71,11 +71,24 @@ describe("stub", () => {
     fs.restore();
   });
 
-  it("should allow users to read original files (readThrough)", async () => {
+  it("should allow original files to be read initially (readThrough)", async () => {
     using stub = fs.stub(new URL("../", import.meta.url));
     fs.mock();
     await Deno.readTextFile(new URL("../README.md", import.meta.url));
     assertSpyCalls(stub.readTextFile, 1);
+  });
+
+  it("should let the updated file be read after being written", async () => {
+    using _ = fs.stub(new URL("../", import.meta.url));
+    fs.mock();
+    await Deno.writeTextFile(
+      new URL("../README.md", import.meta.url),
+      "amber",
+    );
+    assertEquals(
+      await Deno.readTextFile(new URL("../README.md", import.meta.url)),
+      "amber",
+    );
   });
 
   it("should not try to write to the original path", async () => {
@@ -95,7 +108,7 @@ describe("stub", () => {
     assertSpyCalls(stub.writeTextFile, 1);
   });
 
-  it("should throw on a non-existent path if readThrough is disabled", () => {
+  it("should throw on a file that has not been written if readThrough is disabled", () => {
     using _ = fs.stub(new URL("../", import.meta.url), { readThrough: false });
     fs.mock();
     assertThrows(() =>
