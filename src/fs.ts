@@ -108,12 +108,16 @@ const FsFnNames = [
 
 type FsFnName = typeof FsFnNames[number];
 
-/**
- * A subset of the `Deno` namespace that are related to file system operations.
- */
-const DenoFs: {
+/** A subset of the `Deno` namespace that are related to file system operations. */
+type DenoFs = {
   [K in FsFnName]: typeof Deno[K];
-} = pick(Deno, FsFnNames);
+};
+
+/** Get a subset of the `Deno` namespace that are related to file system operations. */
+const DenoFs = (): DenoFs => pick(Deno, FsFnNames);
+
+/** The original implementations of Deno's file system APIs. */
+const DenoFsOriginal = DenoFs();
 
 /**
  * A record of spies for the file system operations.
@@ -138,16 +142,16 @@ export interface FileSystemStub extends FileSystemSpy {
  * Dummy implementations of Deno's file system APIs that redirect the operations
  * to a temporary directory.
  */
-const DenoFsDummy = (base: string | URL, temp: string): typeof DenoFs => {
+const DenoFsDummy = (base: string | URL, temp: string): DenoFs => {
   const redirect = (path: string | URL) => join(temp, relative(base, path));
   const dummy = {};
   for (const name of FsFnNames) {
     Object.defineProperty(dummy, name, {
       configurable: true,
       enumerable: true,
-      value(...args: Parameters<typeof DenoFs[FsFnName]>) {
+      value(...args: Parameters<typeof Deno[FsFnName]>) {
         try {
-          DenoFs[name](
+          DenoFsOriginal[name](
             isFsSysName(name) ? args[0] : redirect(args[0] as string | URL),
             isFsMapName(name) ? redirect(args[1] as string | URL) : args[1],
             // @ts-ignore 2556 allow passing a spread argument
@@ -156,14 +160,14 @@ const DenoFsDummy = (base: string | URL, temp: string): typeof DenoFs => {
         } catch (err) {
           if (err instanceof Deno.errors.NotFound) {
             // @ts-ignore 2556 allow passing a spread argument
-            DenoFs[name](...args);
+            DenoFsOriginal[name](...args);
           }
           throw err;
         }
       },
     });
   }
-  return dummy as typeof DenoFs;
+  return dummy as DenoFs;
 };
 
 /**
@@ -183,9 +187,9 @@ const spies = new class extends Map<string | URL, FileSystemSpy> {
 
 export function stub(
   path: string | URL,
-  fake: Partial<typeof DenoFs> = {},
+  fake: Partial<DenoFs> = {},
 ): FileSystemStub {
-  const temp = DenoFs.makeTempDirSync();
+  const temp = DenoFsOriginal.makeTempDirSync();
   const dummy = DenoFsDummy(path, temp);
 
   const stub = {} as FileSystemStub;
@@ -213,7 +217,7 @@ export function stub(
 export function spy(
   path: string | URL,
 ): FileSystemSpy {
-  return stub(path, DenoFs);
+  return stub(path, DenoFs());
 }
 
 export function mock(): Disposable {
@@ -229,7 +233,7 @@ function mockFsOp<T extends FsOpName | FsOpSyncName>(
   name: T,
 ) {
   Object.defineProperty(Deno, name, {
-    value(...args: Parameters<typeof DenoFs[T]>) {
+    value(...args: Parameters<DenoFs[T]>) {
       const spy = spies.get(args[0]);
       if (spy) {
         return spy[name].bind(spy[name])(...args);
@@ -249,15 +253,10 @@ export function use<T>(fn: () => T): T {
   }
 }
 
-export function restore() {
-  Object.entries(DenoFs).forEach(([name, fn]) => {
-    restoreFsFn(name as FsFnName, fn);
-  });
-}
-
-function restoreFsFn<T extends FsFnName>(
-  name: T,
-  fn: typeof Deno[T],
-) {
-  Deno[name] = fn;
+export function restore(): void {
+  for (const name of FsFnNames) {
+    Object.defineProperty(Deno, name, {
+      value: DenoFsOriginal[name],
+    });
+  }
 }

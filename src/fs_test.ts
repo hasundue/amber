@@ -41,11 +41,20 @@ describe("spy", () => {
     fs.restore();
   });
 
-  it("should create a FileSystemSpy", async () => {
+  it("should spy file system functions", async () => {
     using spy = fs.spy(new URL("../", import.meta.url));
     fs.mock();
     await Deno.readTextFile(new URL("../README.md", import.meta.url));
     assertSpyCalls(spy.readTextFile, 1);
+  });
+
+  it("should be able to spy multiple paths", async () => {
+    using cwd = fs.spy(new URL(".", import.meta.url));
+    using root = fs.spy(new URL("../", import.meta.url));
+    fs.mock();
+    await Deno.readTextFile(new URL("../README.md", import.meta.url));
+    assertSpyCalls(cwd.readTextFile, 0);
+    assertSpyCalls(root.readTextFile, 1);
   });
 });
 
@@ -59,6 +68,15 @@ describe("stub", () => {
     fs.mock();
     await Deno.readTextFile(new URL("../README.md", import.meta.url));
     assertSpyCalls(stub.readTextFile, 1);
+  });
+
+  it("should be able to stub multiple paths", async () => {
+    using cwd = fs.stub(new URL(".", import.meta.url));
+    using root = fs.stub(new URL("../", import.meta.url));
+    fs.mock();
+    await Deno.readTextFile(new URL("../README.md", import.meta.url));
+    assertSpyCalls(cwd.readTextFile, 0);
+    assertSpyCalls(root.readTextFile, 1);
   });
 });
 
