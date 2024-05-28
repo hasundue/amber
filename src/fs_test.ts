@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, it } from "@std/testing/bdd";
+import { assert } from "@std/assert";
+import { afterAll, afterEach, beforeAll, describe, it } from "@std/testing/bdd";
 import { assertSpyCall, assertSpyCalls } from "@std/testing/mock";
 import type { FileSystemSpy } from "./fs.ts";
 import * as fs from "./fs.ts";
-import { assert } from "@std/assert";
 
 describe("mock", () => {
   const Original = Deno.readTextFile;
@@ -49,7 +49,7 @@ describe("spy", () => {
   });
 });
 
-describe.only("stub", () => {
+describe("stub", () => {
   afterEach(() => {
     fs.restore();
   });
@@ -65,12 +65,13 @@ describe.only("stub", () => {
 describe("FileSystemSpy", () => {
   let spy: FileSystemSpy;
 
-  beforeEach(() => {
+  beforeAll(() => {
     spy = fs.spy(new URL("../", import.meta.url));
     fs.mock();
   });
 
-  afterEach(() => {
+  afterAll(() => {
+    spy[Symbol.dispose]();
     fs.restore();
   });
 
@@ -80,7 +81,8 @@ describe("FileSystemSpy", () => {
   });
 
   it("should be testable with assertSpyCall", async () => {
-    await Deno.readTextFile(new URL("../README.md", import.meta.url));
-    assertSpyCall(spy.readTextFile, 0, { args: ["../README.md"] });
+    const url = new URL("../README.md", import.meta.url);
+    await Deno.readTextFile(url);
+    assertSpyCall(spy.readTextFile, 0, { args: [url] });
   });
 });

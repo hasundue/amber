@@ -2,7 +2,6 @@
   "version": "3",
   "packages": {
     "specifiers": {
-      "jsr:@molt/lib": "jsr:@molt/lib@0.18.0",
       "jsr:@molt/lib@^0.18.0": "jsr:@molt/lib@0.18.0",
       "jsr:@std/assert@^0.222.1": "jsr:@std/assert@0.222.1",
       "jsr:@std/assert@^0.224.0": "jsr:@std/assert@0.224.0",
@@ -77,6 +76,7 @@
       "jsr:@molt/lib@^0.18.0",
       "jsr:@std/assert@^0.225.3",
       "jsr:@std/collections@^0.224.2",
+      "jsr:@std/fs@^0.229.1",
       "jsr:@std/path@^0.225.1",
       "jsr:@std/testing@^0.224.0"
     ]
