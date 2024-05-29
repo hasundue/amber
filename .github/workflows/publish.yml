@@ -4,6 +4,7 @@ on:
   release:
     types:
       - published
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,4 +14,11 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - run: deno run -A jsr:@david/publish-on-tag@x.x.x
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+
+      - name: Run @david/publish-on-tag
+        run: deno run -A jsr:@david/publish-on-tag
