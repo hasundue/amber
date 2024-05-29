@@ -20,9 +20,8 @@
     "@std/testing": "jsr:@std/testing@^0.224.0"
   },
   "tasks": {
-    "cache": "deno cache src/*.ts",
-    "check": "deno fmt && deno lint && deno check src/*.ts",
+    "check": "deno fmt -q && deno lint -q && deno check -q src/*.ts",
     "test": "deno test --allow-read --allow-write=/tmp --no-check",
-    "pre-commit": "deno task check && deno task test --parallel --shuffle"
+    "pre-commit": "deno task check && deno task test"
   }
 }

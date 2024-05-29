@@ -51,10 +51,8 @@ jobs:
       - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/deno
-            ~/.deno
           key: deno-${{ hashFiles('deno.lock') }}
+          path: ~/.cache/deno
           restore-keys: deno
 
       - name: Run type check
@@ -73,10 +71,8 @@ jobs:
       - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/deno
-            ~/.deno
           key: deno-${{ hashFiles('deno.lock') }}
+          path: ~/.cache/deno
           restore-keys: deno
 
       - name: Run tests
