@@ -45,108 +45,110 @@ describe("restore", () => {
 });
 
 describe("spy", () => {
-  afterEach(() => {
-    fs.restore();
+  let cwd: string;
+
+  beforeAll(() => {
+    cwd = Deno.cwd();
+    Deno.chdir(new URL(".", import.meta.url));
+  });
+
+  afterAll(() => {
+    Deno.chdir(cwd);
   });
 
   it("should spy file system functions", async () => {
-    using spy = fs.spy(new URL("../", import.meta.url));
-    fs.mock();
-    await Deno.readTextFile(new URL("../README.md", import.meta.url));
+    using spy = fs.spy("../");
+    await fs.use(() => Deno.readTextFile("../README.md"));
     assertSpyCalls(spy.readTextFile, 1);
   });
 
   it("should be able to spy multiple paths separately", async () => {
-    using cwd = fs.spy(new URL(".", import.meta.url));
-    using root = fs.spy(new URL("../", import.meta.url));
-    fs.mock();
-    await Deno.readTextFile(new URL("../README.md", import.meta.url));
+    using cwd = fs.spy(".");
+    using root = fs.spy("../");
+    await fs.use(() => Deno.readTextFile("../README.md"));
     assertSpyCalls(cwd.readTextFile, 0);
     assertSpyCalls(root.readTextFile, 1);
   });
 });
 
 describe("stub", () => {
-  afterEach(() => {
-    fs.restore();
+  let cwd: string;
+
+  beforeAll(() => {
+    cwd = Deno.cwd();
+    Deno.chdir(new URL(".", import.meta.url));
+  });
+
+  afterAll(() => {
+    Deno.chdir(cwd);
   });
 
   it("should not write to the original path", async () => {
-    using stub = fs.stub(new URL("../", import.meta.url));
-    fs.mock();
-    await Deno.writeTextFile(
-      new URL("../test.txt", import.meta.url),
-      "amber",
-    );
+    using stub = fs.stub("../");
+    await fs.use(() => Deno.writeTextFile("../test.txt", "amber"));
     assertEquals(
-      Deno.permissions.querySync({
-        name: "write",
-        path: new URL("../test.txt", import.meta.url),
-      }).state,
+      (await Deno.permissions.query({ name: "write", path: "../test.txt" }))
+        .state,
       "prompt",
     );
     assertSpyCalls(stub.writeTextFile, 1);
   });
 
   it("should allow original files to be read initially (readThrough)", async () => {
-    using stub = fs.stub(new URL("../", import.meta.url));
-    fs.mock();
-    await Deno.readTextFile(new URL("../README.md", import.meta.url));
+    using stub = fs.stub("../");
+    await fs.use(() => Deno.readTextFile("../README.md"));
     assertSpyCalls(stub.readTextFile, 1);
   });
 
   it("should let the updated file be read after being written", async () => {
-    using _ = fs.stub(new URL("../", import.meta.url));
-    fs.mock();
-    await Deno.writeTextFile(
-      new URL("../README.md", import.meta.url),
-      "amber",
-    );
-    assertEquals(
-      await Deno.readTextFile(new URL("../README.md", import.meta.url)),
-      "amber",
-    );
+    using _ = fs.stub("../");
+    await fs.use(async () => {
+      await Deno.writeTextFile("../README.md", "amber");
+      assertEquals(
+        await Deno.readTextFile("../README.md"),
+        "amber",
+      );
+    });
   });
 
   it("should throw on a file that has not been written if readThrough is disabled", () => {
     using _ = fs.stub(new URL("../", import.meta.url), { readThrough: false });
-    fs.mock();
-    assertThrows(() =>
-      Deno.readTextFileSync(new URL("../README.md", import.meta.url))
-    );
+    fs.use(() => assertThrows(() => Deno.readTextFileSync("../README.md")));
   });
 
   it("should be able to stub multiple paths separately", async () => {
-    using cwd = fs.stub(new URL(".", import.meta.url));
-    using root = fs.stub(new URL("../", import.meta.url));
-    fs.mock();
-    await Deno.readTextFile(new URL("../README.md", import.meta.url));
+    using cwd = fs.stub(".");
+    using root = fs.stub("../");
+    await fs.use(() => Deno.readTextFile("../README.md"));
     assertSpyCalls(cwd.readTextFile, 0);
     assertSpyCalls(root.readTextFile, 1);
   });
 });
 
 describe("FileSystemSpy", () => {
+  let cwd: string;
   let spy: FileSystemSpy;
 
   beforeAll(() => {
-    spy = fs.spy(new URL("../", import.meta.url));
+    cwd = Deno.cwd();
+    Deno.chdir(new URL(".", import.meta.url));
+    spy = fs.spy("../");
     fs.mock();
   });
 
   afterAll(() => {
     spy[Symbol.dispose]();
     fs.restore();
+    Deno.chdir(cwd);
   });
 
   it("should be testable with assertSpyCalls", async () => {
-    await Deno.readTextFile(new URL("../README.md", import.meta.url));
+    await Deno.readTextFile("../README.md");
     assertSpyCalls(spy.readTextFile, 1);
   });
 
   it("should be testable with assertSpyCall", async () => {
-    const url = new URL("../README.md", import.meta.url);
-    await Deno.readTextFile(url);
-    assertSpyCall(spy.readTextFile, 0, { args: [url] });
+    await Deno.readTextFile("../README.md");
+    assertSpyCall(spy.readTextFile, 0, { args: ["../README.md"] });
   });
 });
