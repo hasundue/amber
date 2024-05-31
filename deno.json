@@ -4,11 +4,12 @@
   "exports": {
     ".": "./src/mod.ts",
     "./cmd": "./src/cmd.ts",
-    "./fs": "./src/fs.ts"
+    "./fs": "./src/fs.ts",
+    "./util": "./src/util.ts"
   },
   "publish": {
     "exclude": [
-      "**/*_test.ts"
+      "src/*_test.ts"
     ]
   },
   "imports": {
