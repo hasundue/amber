@@ -9,6 +9,7 @@
   },
   "publish": {
     "exclude": [
+      ".github/",
       "src/*_test.ts"
     ]
   },
