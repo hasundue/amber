@@ -213,7 +213,7 @@ it("should restore the Deno namespace", () => {
 ### Utilities
 
 ```typescript
-import { all } from "jsr:@chiezo/amber";
+import { all } from "jsr:@chiezo/amber/util";
 ```
 
 #### `all`

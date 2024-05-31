@@ -2,7 +2,7 @@ import { assert } from "@std/assert";
 import { afterEach, describe, it } from "@std/testing/bdd";
 import * as cmd from "./cmd.ts";
 import * as fs from "./fs.ts";
-import { all } from "./mocks.ts";
+import { all } from "./util.ts";
 
 describe("all", () => {
   const original = { ...Deno };
