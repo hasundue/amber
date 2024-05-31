@@ -221,29 +221,42 @@ import { all } from "jsr:@chiezo/amber/util";
 ```typescript
 const original = { ...Deno };
 
-describe("mock", () => {
-  it("should mock multiple modules at the same time", () => {
-    all(cmd, fs).mock();
-    assert(Deno.Command !== original.Command);
-    assert(Deno.readTextFile !== original.readTextFile);
+it("should mock multiple modules at the same time", async () => {
+  using echo = cmd.stub("echo");
+  using root = fs.stub("../");
+
+  all(cmd, fs).mock();
+
+  new Deno.Command("echo");
+  assertSpyCalls(echo, 1);
+
+  await Deno.readTextFile("../README.md");
+  assertSpyCalls(root.readTextFile, 1);
+});
+
+it("should use multiple modules at the same time", async () => {
+  using echo = cmd.stub("echo");
+  using root = fs.stub("../");
+
+  await all(cmd, fs).use(async () => {
+    new Deno.Command("echo");
+    assertSpyCalls(echo, 1);
+
+    await Deno.writeTextFile("../test.txt", "amber");
+    assertSpyCalls(root.writeTextFile, 1);
+
+    assertEquals(
+      await Deno.readTextFile("../test.txt"),
+      "amber",
+    );
+    assertSpyCalls(root.readTextFile, 1);
   });
 });
 
-describe("use", () => {
-  it("should use multiple modules at the same time", () => {
-    all(cmd, fs).use(() => {
-      assert(Deno.Command !== original.Command);
-      assert(Deno.readTextFile !== original.readTextFile);
-    });
-  });
-});
-
-describe("restore", () => {
-  it("should restore multiple modules at the same time", () => {
-    all(cmd, fs).mock();
-    all(cmd, fs).restore();
-    assert(Deno.Command === original.Command);
-    assert(Deno.readTextFile === original.readTextFile);
-  });
+it("should restore multiple modules at the same time", () => {
+  all(cmd, fs).mock();
+  all(cmd, fs).restore();
+  assert(Deno.Command === original.Command);
+  assert(Deno.readTextFile === original.readTextFile);
 });
 ```

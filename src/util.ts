@@ -1,3 +1,5 @@
+import { tryFinally } from "./internal.ts";
+
 export interface MockModule {
   mock(): Disposable;
   restore(): void;
@@ -15,8 +17,8 @@ export function all(...mods: MockModule[]): MockModule {
       };
     },
     use<T>(fn: () => T): T {
-      using _ = this.mock();
-      return fn();
+      this.mock();
+      return tryFinally(fn, this.restore);
     },
     restore() {
       mods.forEach((m) => m.restore());

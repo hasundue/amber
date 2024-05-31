@@ -47,3 +47,23 @@ export function tryCatchFinally<T>(
   if (cleanup) cleanup();
   return ret;
 }
+
+/**
+ * A syntax sugar for `tryCatchFinally(fn, handle, undefined)`.
+ */
+export function tryCatch<T>(
+  fn: () => T,
+  handle: (error: Error) => T,
+): T {
+  return tryCatchFinally(fn, handle);
+}
+
+/**
+ * A syntax sugar for `tryCatchFinally(fn, undefined, cleanup)`.
+ */
+export function tryFinally<T>(
+  fn: () => T,
+  cleanup: () => void,
+): T {
+  return tryCatchFinally(fn, undefined, cleanup);
+}
