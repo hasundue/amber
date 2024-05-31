@@ -8,7 +8,7 @@ import { mapValues, pick } from "@std/collections";
 import { join } from "@std/path";
 import type { Spy } from "@std/testing/mock";
 import * as std from "@std/testing/mock";
-import { isUnder, relative, tryCatchFinally } from "./internal.ts";
+import { isUnder, relative, tryCatch, tryFinally } from "./internal.ts";
 
 /**
  * The base names of Deno's APIs related to file system operations that takes
@@ -127,7 +127,7 @@ function createFsFake(
     (fn, name) =>
       new Proxy(fn, {
         apply(target, thisArg, args) {
-          return tryCatchFinally(
+          return tryCatch(
             () =>
               Reflect.apply(target, thisArg, [
                 redirect(args[0]),
@@ -245,7 +245,7 @@ function mockFsFn<T extends FsFnName>(name: T) {
 
 export function use<T>(fn: () => T): T {
   mock();
-  return tryCatchFinally(fn, undefined, restore);
+  return tryFinally(fn, restore);
 }
 
 export function restore() {
