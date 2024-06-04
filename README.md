@@ -20,7 +20,7 @@ import * as cmd from "jsr:@chiezo/amber/cmd";
 
 #### `mock`
 
-Replace Deno.Command:
+Replace Deno.Command as a side effect:
 
 ```typescript
 cmd.mock();
@@ -38,22 +38,9 @@ assert(Symbol.dispose in cmd.mock());
 Replace Deno.Command inside the callback:
 
 ```typescript
-using echo = cmd.spy("echo");
-
-cmd.use(() => {
-  new Deno.Command("echo");
-});
+const echo = cmd.spy("echo");
+cmd.use(() => new Deno.Command("echo"));
 assertSpyCalls(echo, 1);
-```
-
-#### `restore`
-
-Restore Deno.Command:
-
-```typescript
-cmd.mock();
-cmd.restore();
-assert(Deno.Command === Original);
 ```
 
 #### `spy`
@@ -61,8 +48,7 @@ assert(Deno.Command === Original);
 Create a spy for a command:
 
 ```typescript
-using echo = cmd.spy("echo");
-
+const echo = cmd.spy("echo");
 cmd.use(() => new Deno.Command("echo"));
 assertSpyCalls(echo, 1);
 ```
@@ -70,10 +56,8 @@ assertSpyCalls(echo, 1);
 Create multiple spies for different commands separately:
 
 ```typescript
-using echo = cmd.spy("echo");
-
-using ls = cmd.spy("ls");
-
+const echo = cmd.spy("echo");
+const ls = cmd.spy("ls");
 cmd.use(() => {
   new Deno.Command("echo");
   assertSpyCalls(echo, 1);
@@ -86,13 +70,11 @@ cmd.use(() => {
 
 #### `stub`
 
-Create a stub for a command with a dummy by default:
+Stub a command with the default dummy:
 
 ```typescript
-using echo = cmd.stub("echo");
-
-cmd.mock();
-await new Deno.Command("echo").output();
+const echo = cmd.stub("echo");
+await cmd.use(() => new Deno.Command("echo").output());
 assertEquals(
   Deno.permissions.querySync({ name: "run", command: "echo" }).state,
   "prompt",
@@ -100,7 +82,7 @@ assertEquals(
 assertSpyCalls(echo, 1);
 ```
 
-Create a stub for a command with a fake:
+Stub a command with a given fake:
 
 ```typescript
 cmd.stub(
@@ -112,8 +94,45 @@ cmd.stub(
     }
   },
 );
+cmd.use(() => assertThrows(() => new Deno.Command("echo")));
+```
+
+#### `restore`
+
+Restore Deno.Command:
+
+```typescript
 cmd.mock();
-assertThrows(() => new Deno.Command("echo"));
+cmd.restore();
+assert(Deno.Command === Original);
+```
+
+Won't dispose spies created:
+
+```typescript
+const echo = cmd.spy("echo");
+cmd.restore();
+cmd.use(() => new Deno.Command("echo"));
+assertSpyCalls(echo, 1);
+```
+
+#### `dispose`
+
+Restore Deno.Command:
+
+```typescript
+cmd.mock();
+cmd.dispose();
+assert(Deno.Command === Original);
+```
+
+Dispose spies created:
+
+```typescript
+const echo = cmd.spy("echo");
+cmd.dispose();
+cmd.use(() => new Deno.Command("echo"));
+assertSpyCalls(echo, 0);
 ```
 
 ### File System
@@ -149,6 +168,79 @@ fs.use(() => {
 });
 ```
 
+#### `spy`
+
+Spy file system functions:
+
+```typescript
+const spy = fs.spy(".");
+await fs.use(() => Deno.readTextFile("./README.md"));
+assertSpyCalls(spy.readTextFile, 1);
+```
+
+Spy multiple paths separately:
+
+```typescript
+const cwd = fs.spy(".");
+const src = fs.spy("./src");
+await fs.use(() => Deno.readTextFile("./README.md"));
+assertSpyCalls(cwd.readTextFile, 1);
+assertSpyCalls(src.readTextFile, 0);
+```
+
+#### `stub`
+
+Won't write to the original path:
+
+```typescript
+const stub = fs.stub(".");
+await fs.use(() => Deno.writeTextFile("./test.txt", "amber"));
+assertEquals(
+  (await Deno.permissions.query({ name: "write", path: "./test.txt" }))
+    .state,
+  "prompt",
+);
+assertSpyCalls(stub.writeTextFile, 1);
+```
+
+Make the original file readable initially (readThrough):
+
+```typescript
+const stub = fs.stub(".");
+await fs.use(() => Deno.readTextFile("./README.md"));
+assertSpyCalls(stub.readTextFile, 1);
+```
+
+Make the updated content readable after being written:
+
+```typescript
+fs.stub(".");
+await fs.use(async () => {
+  await Deno.writeTextFile("./README.md", "amber");
+  assertEquals(
+    await Deno.readTextFile("./README.md"),
+    "amber",
+  );
+});
+```
+
+Throw on a file that has not been written if readThrough is disabled:
+
+```typescript
+fs.stub(".", { readThrough: false });
+fs.use(() => assertThrows(() => Deno.readTextFileSync("./README.md")));
+```
+
+Stub multiple paths separately:
+
+```typescript
+const cwd = fs.stub(".");
+const src = fs.stub("./src");
+await fs.use(() => Deno.readTextFile("./README.md"));
+assertSpyCalls(cwd.readTextFile, 1);
+assertSpyCalls(src.readTextFile, 0);
+```
+
 #### `restore`
 
 Restore file system functions:
@@ -160,86 +252,33 @@ assert(Deno.readTextFile === original.readTextFile);
 assert(Deno.readTextFileSync === original.readTextFileSync);
 ```
 
-#### `spy`
-
-Spy file system functions:
+Won't dispose spies created:
 
 ```typescript
-using spy = fs.spy("../");
-
-await fs.use(() => Deno.readTextFile("../README.md"));
+const spy = fs.spy(".");
+fs.restore();
+await fs.use(() => Deno.readTextFile("./README.md"));
 assertSpyCalls(spy.readTextFile, 1);
 ```
 
-Spy multiple paths separately:
+#### `dispose`
+
+Restore file system functions:
 
 ```typescript
-using cwd = fs.spy(".");
-
-using root = fs.spy("../");
-
-await fs.use(() => Deno.readTextFile("../README.md"));
-assertSpyCalls(cwd.readTextFile, 0);
-assertSpyCalls(root.readTextFile, 1);
+fs.mock();
+fs.dispose();
+assert(Deno.readTextFile === original.readTextFile);
+assert(Deno.readTextFileSync === original.readTextFileSync);
 ```
 
-#### `stub`
-
-Won't write to the original path:
+Dispose spies created:
 
 ```typescript
-using stub = fs.stub("../");
-
-await fs.use(() => Deno.writeTextFile("../test.txt", "amber"));
-assertEquals(
-  (await Deno.permissions.query({ name: "write", path: "../test.txt" }))
-    .state,
-  "prompt",
-);
-assertSpyCalls(stub.writeTextFile, 1);
-```
-
-Make the original file readable initially (readThrough):
-
-```typescript
-using stub = fs.stub("../");
-
-await fs.use(() => Deno.readTextFile("../README.md"));
-assertSpyCalls(stub.readTextFile, 1);
-```
-
-Make the updated content readable after being written:
-
-```typescript
-using _ = fs.stub("../");
-
-await fs.use(async () => {
-  await Deno.writeTextFile("../README.md", "amber");
-  assertEquals(
-    await Deno.readTextFile("../README.md"),
-    "amber",
-  );
-});
-```
-
-Throw on a file that has not been written if readThrough is disabled:
-
-```typescript
-using _ = fs.stub(new URL("../", import.meta.url), { readThrough: false });
-
-fs.use(() => assertThrows(() => Deno.readTextFileSync("../README.md")));
-```
-
-Stub multiple paths separately:
-
-```typescript
-using cwd = fs.stub(".");
-
-using root = fs.stub("../");
-
-await fs.use(() => Deno.readTextFile("../README.md"));
-assertSpyCalls(cwd.readTextFile, 0);
-assertSpyCalls(root.readTextFile, 1);
+const spy = fs.spy(".");
+fs.dispose();
+await fs.use(() => Deno.readTextFile("./README.md"));
+assertSpyCalls(spy.readTextFile, 0);
 ```
 
 ### Utilities
@@ -250,13 +289,11 @@ import { all } from "jsr:@chiezo/amber/util";
 
 #### `all`
 
-Mock multiple modules at the same time:
+Mock multiple modules simultaneously:
 
 ```typescript
-using echo = cmd.stub("echo");
-
-using root = fs.stub("../");
-
+const echo = cmd.stub("echo");
+const root = fs.stub("../");
 all(cmd, fs).mock();
 new Deno.Command("echo");
 assertSpyCalls(echo, 1);
@@ -264,13 +301,11 @@ await Deno.readTextFile("../README.md");
 assertSpyCalls(root.readTextFile, 1);
 ```
 
-Use multiple modules at the same time:
+Use multiple modules simultaneously:
 
 ```typescript
-using echo = cmd.stub("echo");
-
-using root = fs.stub("../");
-
+const echo = cmd.stub("echo");
+const root = fs.stub("../");
 await all(cmd, fs).use(async () => {
   new Deno.Command("echo");
   assertSpyCalls(echo, 1);
@@ -286,11 +321,24 @@ await all(cmd, fs).use(async () => {
 });
 ```
 
-Restore multiple modules at the same time:
+Restore multiple modules simultaneously:
 
 ```typescript
 all(cmd, fs).mock();
 all(cmd, fs).restore();
 assert(Deno.Command === original.Command);
 assert(Deno.readTextFile === original.readTextFile);
+```
+
+Dispose multiple modules simultaneously:
+
+```typescript
+const echo = cmd.spy("echo");
+const root = fs.spy("../");
+all(cmd, fs).mock();
+all(cmd, fs).dispose();
+new Deno.Command("echo");
+assertSpyCalls(echo, 0);
+await Deno.readTextFile("../README.md");
+assertSpyCalls(root.readTextFile, 0);
 ```

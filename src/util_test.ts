@@ -15,16 +15,16 @@ describe("all", () => {
   });
 
   afterEach(() => {
-    all(cmd, fs).restore();
+    all(cmd, fs).dispose();
   });
 
   afterAll(() => {
     Deno.chdir(cwd);
   });
 
-  it("should mock multiple modules at the same time", async () => {
-    using echo = cmd.stub("echo");
-    using root = fs.stub("../");
+  it("should mock multiple modules simultaneously", async () => {
+    const echo = cmd.stub("echo");
+    const root = fs.stub("../");
 
     all(cmd, fs).mock();
 
@@ -35,9 +35,9 @@ describe("all", () => {
     assertSpyCalls(root.readTextFile, 1);
   });
 
-  it("should use multiple modules at the same time", async () => {
-    using echo = cmd.stub("echo");
-    using root = fs.stub("../");
+  it("should use multiple modules simultaneously", async () => {
+    const echo = cmd.stub("echo");
+    const root = fs.stub("../");
 
     await all(cmd, fs).use(async () => {
       new Deno.Command("echo");
@@ -54,10 +54,24 @@ describe("all", () => {
     });
   });
 
-  it("should restore multiple modules at the same time", () => {
+  it("should restore multiple modules simultaneously", () => {
     all(cmd, fs).mock();
     all(cmd, fs).restore();
     assert(Deno.Command === original.Command);
     assert(Deno.readTextFile === original.readTextFile);
+  });
+
+  it("should dispose multiple modules simultaneously", async () => {
+    const echo = cmd.spy("echo");
+    const root = fs.spy("../");
+
+    all(cmd, fs).mock();
+    all(cmd, fs).dispose();
+
+    new Deno.Command("echo");
+    assertSpyCalls(echo, 0);
+
+    await Deno.readTextFile("../README.md");
+    assertSpyCalls(root.readTextFile, 0);
   });
 });

@@ -226,7 +226,7 @@ export function mock(): Disposable {
   }
   return {
     [Symbol.dispose]() {
-      restore();
+      dispose();
     },
   };
 }
@@ -252,6 +252,11 @@ export function restore() {
   for (const name of FsFnNames) {
     restoreFsFn(name, fs[name]);
   }
+}
+
+export function dispose() {
+  restore();
+  spies.clear();
 }
 
 function restoreFsFn<T extends FsFnName>(
