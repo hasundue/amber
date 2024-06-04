@@ -1,7 +1,6 @@
 import { assert, assertEquals, assertThrows } from "@std/assert";
-import { afterEach, beforeEach, describe, it } from "@std/testing/bdd";
-import { assertSpyCallArg, assertSpyCalls } from "@std/testing/mock";
-import type { CommandSpy } from "./cmd.ts";
+import { afterEach, describe, it } from "@std/testing/bdd";
+import { assertSpyCalls } from "@std/testing/mock";
 import * as cmd from "./cmd.ts";
 
 describe("mock", () => {
@@ -47,6 +46,19 @@ describe("spy", () => {
     cmd.use(() => new Deno.Command("echo"));
     assertSpyCalls(echo, 1);
   });
+
+  it("should create multiple spies for different commands separately", () => {
+    using echo = cmd.spy("echo");
+    using ls = cmd.spy("ls");
+    cmd.use(() => {
+      new Deno.Command("echo");
+      assertSpyCalls(echo, 1);
+      assertSpyCalls(ls, 0);
+      new Deno.Command("ls");
+      assertSpyCalls(echo, 1);
+      assertSpyCalls(ls, 1);
+    });
+  });
 });
 
 describe("stub", () => {
@@ -77,43 +89,5 @@ describe("stub", () => {
     );
     cmd.mock();
     assertThrows(() => new Deno.Command("echo"));
-  });
-});
-
-describe("CommandSpy", () => {
-  let echo: CommandSpy<"echo">;
-
-  beforeEach(() => {
-    cmd.mock();
-    echo = cmd.spy("echo");
-  });
-
-  afterEach(() => {
-    cmd.restore();
-  });
-
-  it("should be tested with assertSpyCalls", () => {
-    assertSpyCalls(echo, 0);
-    new Deno.Command("echo");
-    assertSpyCalls(echo, 1);
-    new Deno.Command("echo");
-    assertSpyCalls(echo, 2);
-  });
-
-  it("should be tested with assertSpyCallArg", () => {
-    new Deno.Command("echo");
-    assertSpyCallArg(echo, 0, 1, undefined);
-    new Deno.Command("echo", { cwd: "/tmp" });
-    assertSpyCallArg(echo, 1, 1, { cwd: "/tmp" });
-  });
-
-  it("should distinguish between different commands", () => {
-    const ls = cmd.spy("ls");
-    new Deno.Command("echo");
-    assertSpyCalls(echo, 1);
-    assertSpyCalls(ls, 0);
-    new Deno.Command("ls");
-    assertSpyCalls(echo, 1);
-    assertSpyCalls(ls, 1);
   });
 });

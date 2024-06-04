@@ -14,6 +14,7 @@
     ]
   },
   "imports": {
+    "@chiezo/bddoc": "jsr:@chiezo/bddoc@^0.0.3",
     "@molt/lib": "jsr:@molt/lib@^0.18.0",
     "@std/assert": "jsr:@std/assert@^0.225.3",
     "@std/collections": "jsr:@std/collections@^0.224.2",
@@ -23,7 +24,8 @@
   },
   "tasks": {
     "check": "deno fmt -q && deno lint -q && deno check -q src/*.ts",
+    "doc": "deno run --allow-env --allow-ffi --allow-read --allow-run=deno --allow-sys --allow-write=README.md docs/build.ts",
     "test": "deno test --allow-read --allow-write=/tmp --no-check",
-    "pre-commit": "deno task check && deno task test"
+    "pre-commit": "deno task check && deno task test && deno task doc"
   }
 }
