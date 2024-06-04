@@ -2,7 +2,7 @@
   "version": "3",
   "packages": {
     "specifiers": {
-      "jsr:@chiezo/bddoc@^0.0.3": "jsr:@chiezo/bddoc@0.0.3",
+      "jsr:@chiezo/bddoc@^0.0.4": "jsr:@chiezo/bddoc@0.0.4",
       "jsr:@core/match@^0.3.1": "jsr:@core/match@0.3.1",
       "jsr:@core/unknownutil@3.18.0": "jsr:@core/unknownutil@3.18.0",
       "jsr:@molt/lib@^0.18.0": "jsr:@molt/lib@0.18.0",
@@ -21,8 +21,8 @@
       "npm:dedent@^1.5.3": "npm:dedent@1.5.3"
     },
     "jsr": {
-      "@chiezo/bddoc@0.0.3": {
-        "integrity": "ff1eabd532d4480b27f9028967b53d11ff263ff225bceb4a83923252a62361de",
+      "@chiezo/bddoc@0.0.4": {
+        "integrity": "dc6014f0788626096493f28a0031b9d5cb76a1798e35b44286d0dee0c88191a9",
         "dependencies": [
           "jsr:@core/match@^0.3.1",
           "jsr:@std/collections@^0.224.2",
@@ -172,7 +172,7 @@
   "remote": {},
   "workspace": {
     "dependencies": [
-      "jsr:@chiezo/bddoc@^0.0.3",
+      "jsr:@chiezo/bddoc@^0.0.4",
       "jsr:@molt/lib@^0.18.0",
       "jsr:@std/assert@^0.225.3",
       "jsr:@std/collections@^0.224.2",

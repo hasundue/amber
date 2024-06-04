@@ -107,7 +107,7 @@ cmd.restore();
 assert(Deno.Command === Original);
 ```
 
-Won't dispose spies created:
+Not dispose spies created:
 
 ```typescript
 const echo = cmd.spy("echo");
@@ -190,7 +190,7 @@ assertSpyCalls(src.readTextFile, 0);
 
 #### `stub`
 
-Won't write to the original path:
+Not write to the original path:
 
 ```typescript
 const stub = fs.stub(".");
@@ -252,7 +252,7 @@ assert(Deno.readTextFile === original.readTextFile);
 assert(Deno.readTextFileSync === original.readTextFileSync);
 ```
 
-Won't dispose spies created:
+Not dispose spies created:
 
 ```typescript
 const spy = fs.spy(".");
