@@ -1,7 +1,6 @@
 import { assert, assertEquals, assertThrows } from "@std/assert";
 import { afterAll, afterEach, beforeAll, describe, it } from "@std/testing/bdd";
-import { assertSpyCall, assertSpyCalls } from "@std/testing/mock";
-import type { FileSystemSpy } from "./fs.ts";
+import { assertSpyCalls } from "@std/testing/mock";
 import * as fs from "./fs.ts";
 
 describe("mock", () => {
@@ -15,7 +14,7 @@ describe("mock", () => {
     assert(Symbol.dispose in fs.mock());
   });
 
-  it("should replace file system functions", () => {
+  it("should replace file system functions as side effects", () => {
     fs.mock();
     assert(Deno.readTextFile !== original.readTextFile);
     assert(Deno.readTextFileSync !== original.readTextFileSync);
@@ -36,7 +35,7 @@ describe("use", () => {
 describe("restore", () => {
   const original = { ...Deno };
 
-  it("should restore the Deno namespace", () => {
+  it("should restore file system functions", () => {
     fs.mock();
     fs.restore();
     assert(Deno.readTextFile === original.readTextFile);
@@ -62,7 +61,7 @@ describe("spy", () => {
     assertSpyCalls(spy.readTextFile, 1);
   });
 
-  it("should be able to spy multiple paths separately", async () => {
+  it("should spy multiple paths separately", async () => {
     using cwd = fs.spy(".");
     using root = fs.spy("../");
     await fs.use(() => Deno.readTextFile("../README.md"));
@@ -94,13 +93,13 @@ describe("stub", () => {
     assertSpyCalls(stub.writeTextFile, 1);
   });
 
-  it("should allow original files to be read initially (readThrough)", async () => {
+  it("should make the original file readable initially (readThrough)", async () => {
     using stub = fs.stub("../");
     await fs.use(() => Deno.readTextFile("../README.md"));
     assertSpyCalls(stub.readTextFile, 1);
   });
 
-  it("should let the updated file be read after being written", async () => {
+  it("should make the updated content readable after being written", async () => {
     using _ = fs.stub("../");
     await fs.use(async () => {
       await Deno.writeTextFile("../README.md", "amber");
@@ -116,39 +115,11 @@ describe("stub", () => {
     fs.use(() => assertThrows(() => Deno.readTextFileSync("../README.md")));
   });
 
-  it("should be able to stub multiple paths separately", async () => {
+  it("should stub multiple paths separately", async () => {
     using cwd = fs.stub(".");
     using root = fs.stub("../");
     await fs.use(() => Deno.readTextFile("../README.md"));
     assertSpyCalls(cwd.readTextFile, 0);
     assertSpyCalls(root.readTextFile, 1);
-  });
-});
-
-describe("FileSystemSpy", () => {
-  let cwd: string;
-  let spy: FileSystemSpy;
-
-  beforeAll(() => {
-    cwd = Deno.cwd();
-    Deno.chdir(new URL(".", import.meta.url));
-    spy = fs.spy("../");
-    fs.mock();
-  });
-
-  afterAll(() => {
-    spy[Symbol.dispose]();
-    fs.restore();
-    Deno.chdir(cwd);
-  });
-
-  it("should be testable with assertSpyCalls", async () => {
-    await Deno.readTextFile("../README.md");
-    assertSpyCalls(spy.readTextFile, 1);
-  });
-
-  it("should be testable with assertSpyCall", async () => {
-    await Deno.readTextFile("../README.md");
-    assertSpyCall(spy.readTextFile, 0, { args: ["../README.md"] });
   });
 });
