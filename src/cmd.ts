@@ -1,17 +1,16 @@
 import type { ConstructorSpy } from "@std/testing/mock";
 import * as std from "@std/testing/mock";
+import { tryFinally } from "./internal.ts";
 
-export interface CommandSpy<Command extends string | URL>
+export interface Spy<Command extends string | URL>
   extends
     Disposable,
     ConstructorSpy<
       Deno.Command,
       [command: Command, options?: Deno.CommandOptions]
-    > {
-}
+    > {}
 
-export interface CommandStub<Command extends string | URL>
-  extends CommandSpy<Command> {
+export interface Stub<Command extends string | URL> extends Spy<Command> {
   fake: typeof Deno.Command;
 }
 
@@ -47,7 +46,7 @@ const spies = new Map<
 export function stub<Command extends string | URL>(
   command: Command,
   fake: typeof Deno.Command = CommandDummy,
-): CommandStub<Command> {
+): Stub<Command> {
   const spy = std.spy(fake);
   spies.set(command.toString(), spy);
   Object.defineProperties(spy, {
@@ -64,12 +63,12 @@ export function stub<Command extends string | URL>(
       },
     },
   });
-  return spy as unknown as CommandStub<Command>;
+  return spy as unknown as Stub<Command>;
 }
 
 export function spy<Command extends string | URL>(
   command: Command,
-): CommandSpy<Command> {
+): Spy<Command> {
   return stub(command, CommandOriginal);
 }
 
@@ -91,20 +90,19 @@ export function restore() {
   Deno.Command = CommandOriginal;
 }
 
+export function dispose() {
+  restore();
+  spies.clear();
+}
+
 export function mock(): Disposable {
   Deno.Command = CommandProxy;
   return {
-    [Symbol.dispose]() {
-      restore();
-    },
+    [Symbol.dispose]: dispose,
   };
 }
 
 export function use<T>(fn: () => T): T {
   mock();
-  try {
-    return fn();
-  } finally {
-    restore();
-  }
+  return tryFinally(fn, restore);
 }

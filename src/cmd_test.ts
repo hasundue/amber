@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertThrows } from "@std/assert";
-import { afterEach, describe, it } from "@std/testing/bdd";
+import { afterAll, afterEach, describe, it } from "@std/testing/bdd";
 import { assertSpyCalls } from "@std/testing/mock";
 import * as cmd from "./cmd.ts";
 
@@ -10,7 +10,7 @@ describe("mock", () => {
     Deno.Command = Original;
   });
 
-  it("should replace Deno.Command", () => {
+  it("should replace Deno.Command as a side effect", () => {
     cmd.mock();
     assert(Deno.Command !== Original);
   });
@@ -21,35 +21,25 @@ describe("mock", () => {
 });
 
 describe("use", () => {
+  afterAll(() => cmd.dispose());
+
   it("should replace Deno.Command inside the callback", () => {
-    using echo = cmd.spy("echo");
-    cmd.use(() => {
-      new Deno.Command("echo");
-    });
+    const echo = cmd.spy("echo");
+    cmd.use(() => new Deno.Command("echo"));
     assertSpyCalls(echo, 1);
-  });
-});
-
-describe("restore", () => {
-  const Original = Deno.Command;
-
-  it("should restore Deno.Command", () => {
-    cmd.mock();
-    cmd.restore();
-    assert(Deno.Command === Original);
   });
 });
 
 describe("spy", () => {
   it("should create a spy for a command", () => {
-    using echo = cmd.spy("echo");
+    const echo = cmd.spy("echo");
     cmd.use(() => new Deno.Command("echo"));
     assertSpyCalls(echo, 1);
   });
 
   it("should create multiple spies for different commands separately", () => {
-    using echo = cmd.spy("echo");
-    using ls = cmd.spy("ls");
+    const echo = cmd.spy("echo");
+    const ls = cmd.spy("ls");
     cmd.use(() => {
       new Deno.Command("echo");
       assertSpyCalls(echo, 1);
@@ -62,14 +52,11 @@ describe("spy", () => {
 });
 
 describe("stub", () => {
-  afterEach(() => {
-    cmd.restore();
-  });
+  afterEach(() => cmd.dispose());
 
-  it("should create a stub for a command with a dummy by default", async () => {
-    using echo = cmd.stub("echo");
-    cmd.mock();
-    await new Deno.Command("echo").output();
+  it("should stub a command with the default dummy", async () => {
+    const echo = cmd.stub("echo");
+    await cmd.use(() => new Deno.Command("echo").output());
     assertEquals(
       Deno.permissions.querySync({ name: "run", command: "echo" }).state,
       "prompt",
@@ -77,7 +64,7 @@ describe("stub", () => {
     assertSpyCalls(echo, 1);
   });
 
-  it("should create a stub for a command with a fake", () => {
+  it("should stub a command with a given fake", () => {
     cmd.stub(
       "echo",
       class extends Deno.Command {
@@ -87,7 +74,40 @@ describe("stub", () => {
         }
       },
     );
+    cmd.use(() => assertThrows(() => new Deno.Command("echo")));
+  });
+});
+
+describe("restore", () => {
+  const Original = Deno.Command;
+
+  it("should restore Deno.Command", () => {
     cmd.mock();
-    assertThrows(() => new Deno.Command("echo"));
+    cmd.restore();
+    assert(Deno.Command === Original);
+  });
+
+  it("should not dispose spies created", () => {
+    const echo = cmd.spy("echo");
+    cmd.restore();
+    cmd.use(() => new Deno.Command("echo"));
+    assertSpyCalls(echo, 1);
+  });
+});
+
+describe("dispose", () => {
+  const Original = Deno.Command;
+
+  it("should restore Deno.Command", () => {
+    cmd.mock();
+    cmd.dispose();
+    assert(Deno.Command === Original);
+  });
+
+  it("should dispose spies created", () => {
+    const echo = cmd.spy("echo");
+    cmd.dispose();
+    cmd.use(() => new Deno.Command("echo"));
+    assertSpyCalls(echo, 0);
   });
 });
