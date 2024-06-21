@@ -157,6 +157,14 @@ assert(Deno.readTextFile !== original.readTextFile);
 assert(Deno.readTextFileSync !== original.readTextFileSync);
 ```
 
+Stub the current working directory by default:
+
+```typescript
+fs.mock();
+await fs.use(() => Deno.writeTextFile("./test.txt", "amber"));
+assertRejects(() => Deno.readTextFile("./test.txt"));
+```
+
 #### `use`
 
 Replace file system functions within the callback:

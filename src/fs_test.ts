@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertThrows } from "@std/assert";
+import { assert, assertEquals, assertRejects, assertThrows } from "@std/assert";
 import { afterAll, afterEach, beforeAll, describe, it } from "@std/testing/bdd";
 import { assertSpyCalls } from "@std/testing/mock";
 import * as fs from "./fs.ts";
@@ -6,9 +6,7 @@ import * as fs from "./fs.ts";
 describe("mock", () => {
   const original = { ...Deno };
 
-  afterEach(() => {
-    fs.restore();
-  });
+  afterEach(() => fs.dispose());
 
   it("should return a disposable", () => {
     assert(Symbol.dispose in fs.mock());
@@ -19,10 +17,18 @@ describe("mock", () => {
     assert(Deno.readTextFile !== original.readTextFile);
     assert(Deno.readTextFileSync !== original.readTextFileSync);
   });
+
+  it("should stub the current working directory by default", async () => {
+    fs.mock();
+    await fs.use(() => Deno.writeTextFile("./test.txt", "amber"));
+    assertRejects(() => Deno.readTextFile("./test.txt"));
+  });
 });
 
 describe("use", () => {
   const original = { ...Deno };
+
+  afterEach(() => fs.dispose());
 
   it("should replace file system functions within the callback", () => {
     fs.use(() => {
@@ -117,6 +123,7 @@ describe("restore", () => {
     cwd = Deno.cwd();
     Deno.chdir(new URL("../", import.meta.url));
   });
+  afterEach(() => fs.dispose());
   afterAll(() => Deno.chdir(cwd));
 
   it("should restore file system functions", () => {
