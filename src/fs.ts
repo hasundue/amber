@@ -217,6 +217,9 @@ export function spy(
 }
 
 export function mock(): Disposable {
+  if (spies.size === 0) {
+    stub(Deno.cwd());
+  }
   FsFnNames.forEach((name) => mockFsFn(name));
   return {
     [Symbol.dispose]() {
