@@ -157,11 +157,7 @@ function createFsFake(
 const spies = new class extends Map<string | URL, FileSystemSpy> {
   /** Returns the spy for the path that is under the given path. */
   override get(key: string | URL) {
-    for (const [path, spy] of this) {
-      if (isUnder(key, path)) {
-        return spy;
-      }
-    }
+    return Array.from(this.entries()).find(([path]) => isUnder(key, path))?.[1];
   }
 }();
 
@@ -221,9 +217,7 @@ export function spy(
 }
 
 export function mock(): Disposable {
-  for (const name of FsFnNames) {
-    mockFsFn(name);
-  }
+  FsFnNames.forEach((name) => mockFsFn(name));
   return {
     [Symbol.dispose]() {
       dispose();
@@ -249,9 +243,7 @@ export function use<T>(fn: () => T): T {
 }
 
 export function restore() {
-  for (const name of FsFnNames) {
-    restoreFsFn(name, fs[name]);
-  }
+  FsFnNames.forEach((name) => restoreFsFn(name, fs[name]));
 }
 
 export function dispose() {
