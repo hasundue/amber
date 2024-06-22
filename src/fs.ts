@@ -5,10 +5,10 @@
  */
 
 import { mapValues, pick } from "@std/collections";
-import { join } from "@std/path";
+import { dirname, fromFileUrl, join, resolve } from "@std/path";
 import type { Spy } from "@std/testing/mock";
 import * as std from "@std/testing/mock";
-import { isUnder, relative, tryCatch, tryFinally } from "./internal.ts";
+import { relative, tryCatch, tryFinally } from "./internal.ts";
 
 /**
  * The base names of Deno's APIs related to file system operations that takes
@@ -117,7 +117,7 @@ export interface FileSystemStub extends FileSystemSpy {
  * to a temporary directory.
  */
 function createFsFake(
-  base: string | URL,
+  base: string,
   temp: string,
   readThrough: boolean,
 ): Fs {
@@ -156,8 +156,16 @@ function createFsFake(
  */
 const spies = new class extends Map<string | URL, FileSystemSpy> {
   /** Returns the spy for the path that is under the given path. */
-  override get(key: string | URL) {
-    return Array.from(this.entries()).find(([path]) => isUnder(key, path))?.[1];
+  override get(path: string | URL): FileSystemSpy | undefined {
+    const spy = super.get(path);
+    if (spy) {
+      return spy;
+    }
+    path = path.toString();
+    if (path === "." || path === ".." || path === "/") {
+      return;
+    }
+    return this.get(dirname(path));
   }
 }();
 
@@ -189,6 +197,7 @@ export function stub(
   path: string | URL,
   fakeOrOptions?: Partial<Fs> | StubOptions,
 ): FileSystemStub {
+  path = normalize(path);
   const temp = Deno.makeTempDirSync();
 
   const fake = isStubOptions(fakeOrOptions)
@@ -231,7 +240,8 @@ export function mock(): Disposable {
 function mockFsFn<T extends FsFnName>(name: T) {
   Deno[name] = new Proxy(Deno[name], {
     apply(target, thisArg, args) {
-      const spy = spies.get(args[0])?.[name];
+      const path = normalize(args[0]);
+      const spy = spies.get(path)?.[name];
       if (spy) {
         return Reflect.apply(spy, thisArg, args);
       }
@@ -259,4 +269,14 @@ function restoreFsFn<T extends FsFnName>(
   fn: typeof Deno[T],
 ) {
   Deno[name] = fn;
+}
+
+/** Normalize a path or file URL to an absolute path */
+function normalize(path: string | URL): string {
+  if (path instanceof URL) {
+    path = path.protocol === "file:" ? fromFileUrl(path) : path.href;
+  } else {
+    path = resolve(path);
+  }
+  return path.endsWith("/") ? path.slice(0, -1) : path;
 }

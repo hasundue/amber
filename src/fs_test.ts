@@ -39,14 +39,10 @@ describe("use", () => {
 });
 
 describe("spy", () => {
-  let cwd: string;
-
   beforeAll(() => {
-    cwd = Deno.cwd();
     Deno.chdir(new URL("../", import.meta.url));
   });
   afterEach(() => fs.dispose());
-  afterAll(() => Deno.chdir(cwd));
 
   it("should spy file system functions", async () => {
     const spy = fs.spy(".");
@@ -60,6 +56,12 @@ describe("spy", () => {
     await fs.use(() => Deno.readTextFile("./README.md"));
     assertSpyCalls(cwd.readTextFile, 1);
     assertSpyCalls(src.readTextFile, 0);
+  });
+
+  it("should accept a URL", async () => {
+    const spy = fs.spy(new URL("..", import.meta.url));
+    await fs.use(() => Deno.readTextFile("./README.md"));
+    assertSpyCalls(spy.readTextFile, 1);
   });
 });
 
