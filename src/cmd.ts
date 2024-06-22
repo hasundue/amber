@@ -2,13 +2,11 @@ import type { ConstructorSpy } from "@std/testing/mock";
 import * as std from "@std/testing/mock";
 import { tryFinally } from "./internal.ts";
 
-export interface Spy<Command extends string | URL>
-  extends
-    Disposable,
-    ConstructorSpy<
-      Deno.Command,
-      [command: Command, options?: Deno.CommandOptions]
-    > {}
+export interface Spy<Command extends string | URL> extends
+  ConstructorSpy<
+    Deno.Command,
+    [command: Command, options?: Deno.CommandOptions]
+  > {}
 
 export interface Stub<Command extends string | URL> extends Spy<Command> {
   fake: typeof Deno.Command;
@@ -95,11 +93,8 @@ export function dispose() {
   spies.clear();
 }
 
-export function mock(): Disposable {
+export function mock() {
   Deno.Command = CommandProxy;
-  return {
-    [Symbol.dispose]: dispose,
-  };
 }
 
 export function use<T>(fn: () => T): T {

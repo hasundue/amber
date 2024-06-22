@@ -27,12 +27,6 @@ cmd.mock();
 assert(Deno.Command !== Original);
 ```
 
-Return a disposable:
-
-```typescript
-assert(Symbol.dispose in cmd.mock());
-```
-
 #### `use`
 
 Replace Deno.Command inside the callback:
@@ -142,12 +136,6 @@ import * as fs from "jsr:@chiezo/amber/fs";
 ```
 
 #### `mock`
-
-Return a disposable:
-
-```typescript
-assert(Symbol.dispose in fs.mock());
-```
 
 Replace file system functions as side effects:
 

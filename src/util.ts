@@ -2,7 +2,7 @@ import { tryFinally } from "./internal.ts";
 
 export interface MockModule {
   dispose(): void;
-  mock(): Disposable;
+  mock(): void;
   restore(): void;
   use<T>(fn: () => T): T;
 }

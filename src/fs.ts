@@ -105,7 +105,7 @@ type FsSpy = {
 };
 
 /** A record of spies for Deno APIs related to file system operations. */
-export interface FileSystemSpy extends Disposable, FsSpy {
+export interface FileSystemSpy extends FsSpy {
 }
 
 /** A record of stubs for Deno APIs related to file system operations. */
@@ -209,10 +209,6 @@ export function stub(
       fs,
       (fn, name) => fake[name] ? std.spy(fake, name) : fn,
     ),
-    [Symbol.dispose]: () => {
-      spies.delete(path);
-      fs.removeSync(temp, { recursive: true });
-    },
   } as FileSystemStub;
 
   spies.set(path, stub);
@@ -225,16 +221,11 @@ export function spy(
   return stub(path, createFs());
 }
 
-export function mock(): Disposable {
+export function mock() {
   if (spies.size === 0) {
     stub(Deno.cwd());
   }
   FsFnNames.forEach((name) => mockFsFn(name));
-  return {
-    [Symbol.dispose]() {
-      dispose();
-    },
-  };
 }
 
 function mockFsFn<T extends FsFnName>(name: T) {
