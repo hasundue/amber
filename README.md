@@ -196,6 +196,14 @@ assertSpyCalls(cwd.readTextFile, 1);
 assertSpyCalls(src.readTextFile, 0);
 ```
 
+Accept a URL:
+
+```typescript
+const spy = fs.spy(new URL("..", import.meta.url));
+await fs.use(() => Deno.readTextFile("./README.md"));
+assertSpyCalls(spy.readTextFile, 1);
+```
+
 #### `stub`
 
 Not write to the original path:
