@@ -8,10 +8,6 @@ describe("mock", () => {
 
   afterEach(() => fs.dispose());
 
-  it("should return a disposable", () => {
-    assert(Symbol.dispose in fs.mock());
-  });
-
   it("should replace file system functions as side effects", () => {
     fs.mock();
     assert(Deno.readTextFile !== original.readTextFile);

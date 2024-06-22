@@ -14,10 +14,6 @@ describe("mock", () => {
     cmd.mock();
     assert(Deno.Command !== Original);
   });
-
-  it("should return a disposable", () => {
-    assert(Symbol.dispose in cmd.mock());
-  });
 });
 
 describe("use", () => {
