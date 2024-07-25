@@ -26,6 +26,8 @@
     "check": "deno fmt -q && deno lint -q && deno check -q src/*.ts",
     "doc": "deno run --allow-env --allow-ffi --allow-read --allow-run=deno --allow-sys --allow-write=README.md docs/build.ts",
     "test": "deno test --allow-read --allow-write=/tmp --no-check",
-    "pre-commit": "deno task check && deno task test && deno task doc"
+    "pre-commit": "deno task check && deno task test && deno task doc",
+    "update": "deno run --unstable-kv --allow-env --allow-read --allow-write --allow-net --allow-run=git,deno jsr:@molt/cli@0.19.0-rc.2",
+    "update:commit": "deno task -q update --commit --pre-commit=check,test"
   }
 }
