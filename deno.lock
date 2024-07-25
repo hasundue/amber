@@ -18,7 +18,9 @@
       "jsr:@std/path@^0.225.1": "jsr:@std/path@0.225.2",
       "jsr:@std/testing@^0.224.0": "jsr:@std/testing@0.224.0",
       "npm:@swc/core@^1.5.24": "npm:@swc/core@1.5.24",
-      "npm:dedent@^1.5.3": "npm:dedent@1.5.3"
+      "npm:@swc/types@^0.1.7": "npm:@swc/types@0.1.7",
+      "npm:dedent@^1.5.3": "npm:dedent@1.5.3",
+      "npm:ts-toolbelt@9.6.0": "npm:ts-toolbelt@9.6.0"
     },
     "jsr": {
       "@chiezo/bddoc@0.0.4": {
@@ -27,13 +29,15 @@
           "jsr:@core/match@^0.3.1",
           "jsr:@std/collections@^0.224.2",
           "npm:@swc/core@^1.5.24",
+          "npm:@swc/types@^0.1.7",
           "npm:dedent@^1.5.3"
         ]
       },
       "@core/match@0.3.1": {
         "integrity": "020bb0199f56877daf270a457bfeee19daa8c721819d36dc987c2a9df7cca4fd",
         "dependencies": [
-          "jsr:@core/unknownutil@3.18.0"
+          "jsr:@core/unknownutil@3.18.0",
+          "npm:ts-toolbelt@9.6.0"
         ]
       },
       "@core/unknownutil@3.18.0": {
@@ -71,7 +75,10 @@
         "integrity": "e20e9a2312a8b5393272c26191c0a68eda8d2c4b08b046bad1673148f1d69851"
       },
       "@std/internal@0.224.0": {
-        "integrity": "afc50644f9cdf4495eeb80523a8f6d27226b4b36c45c7c195dfccad4b8509291"
+        "integrity": "afc50644f9cdf4495eeb80523a8f6d27226b4b36c45c7c195dfccad4b8509291",
+        "dependencies": [
+          "jsr:@std/fmt@^0.224.0"
+        ]
       },
       "@std/internal@1.0.0": {
         "integrity": "ac6a6dfebf838582c4b4f61a6907374e27e05bedb6ce276e0f1608fe84e7cd9a"
@@ -165,6 +172,10 @@
       },
       "dedent@1.5.3": {
         "integrity": "sha512-NHQtfOOW68WD8lgypbLA5oT+Bt0xXJhiYvoR6SmmNXZfpzOGXwdKWmcwG8N7PwVVWV3eF/68nmD9BaJSsTBhyQ==",
+        "dependencies": {}
+      },
+      "ts-toolbelt@9.6.0": {
+        "integrity": "sha512-nsZd8ZeNUzukXPlJmTBwUAuABDe/9qtVDelJeT/qW0ow3ZS3BsQJtNkan1802aM9Uf68/Y8ljw86Hu0h5IUW3w==",
         "dependencies": {}
       }
     }
