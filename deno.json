@@ -20,7 +20,7 @@
     "@std/collections": "jsr:@std/collections@^1.0.0",
     "@std/fs": "jsr:@std/fs@^0.229.1",
     "@std/path": "jsr:@std/path@^1.0.0",
-    "@std/testing": "jsr:@std/testing@^0.224.0"
+    "@std/testing": "jsr:@std/testing@^0.225.0"
   },
   "tasks": {
     "check": "deno fmt -q && deno lint -q && deno check -q src/*.ts",
