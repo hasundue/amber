@@ -15,6 +15,7 @@
   },
   "imports": {
     "@chiezo/bddoc": "jsr:@chiezo/bddoc@^0.0.4",
+    "@molt/cli": "jsr:@molt/cli@^0.19.0-rc.9",
     "@std/assert": "jsr:@std/assert@^1.0.0",
     "@std/collections": "jsr:@std/collections@^1.0.0",
     "@std/fs": "jsr:@std/fs@^0.229.1",
@@ -26,7 +27,7 @@
     "doc": "deno run --allow-env --allow-ffi --allow-read --allow-run=deno --allow-sys --allow-write=README.md docs/build.ts",
     "test": "deno test --allow-read --allow-write=/tmp --no-check",
     "pre-commit": "deno task check && deno task test && deno task doc",
-    "update": "deno run --unstable-kv --allow-env --allow-read --allow-write --allow-net --allow-run=git,deno jsr:@molt/cli@0.19.0-rc.7",
+    "update": "echo \"import '@molt/cli'\" | deno run --allow-env --allow-read --allow-write='~/.local,.' --allow-net --allow-run=git,deno -",
     "update:commit": "deno task -q update --commit --pre-commit=check,test --prefix 'chore:'"
   }
 }
