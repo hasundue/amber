@@ -5,7 +5,7 @@
  */
 
 import { mapValues, pick } from "@std/collections";
-import { dirname, fromFileUrl, join, resolve } from "@std/path";
+import { dirname, extname, fromFileUrl, join, resolve } from "@std/path";
 import type { Spy } from "@std/testing/mock";
 import * as std from "@std/testing/mock";
 import { relative, tryCatch, tryFinally } from "./internal.ts";
@@ -121,7 +121,8 @@ function createFsFake(
   temp: string,
   readThrough: boolean,
 ): Fs {
-  const redirect = (path: string | URL) => join(temp, relative(base, path));
+  const redirect = (path: string | URL) =>
+    join(temp, relative(base, normalize(path)));
   return mapValues(
     fs,
     (fn, name) =>
@@ -156,12 +157,11 @@ function createFsFake(
  */
 const spies = new class extends Map<string | URL, FileSystemSpy> {
   /** Returns the spy for the path that is under the given path. */
-  override get(path: string | URL): FileSystemSpy | undefined {
+  override get(path: string): FileSystemSpy | undefined {
     const spy = super.get(path);
     if (spy) {
       return spy;
     }
-    path = path.toString();
     if (path === "." || path === ".." || path === "/") {
       return;
     }
@@ -198,10 +198,11 @@ export function stub(
   fakeOrOptions?: Partial<Fs> | StubOptions,
 ): FileSystemStub {
   path = normalize(path);
+  const base = extname(path) ? dirname(path) : path;
   const temp = Deno.makeTempDirSync();
 
   const fake = isStubOptions(fakeOrOptions)
-    ? createFsFake(path, temp, fakeOrOptions?.readThrough ?? true)
+    ? createFsFake(base, temp, fakeOrOptions?.readThrough ?? true)
     : fakeOrOptions ?? {};
 
   const stub = {
