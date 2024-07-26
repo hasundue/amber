@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
-import { afterAll, beforeAll, describe, it } from "@std/testing/bdd";
-import { relative, tryCatchFinally } from "./internal.ts";
+import { describe, it } from "@std/testing/bdd";
+import { tryCatchFinally } from "./internal.ts";
 
 describe("tryCatchFinally", () => {
   it("should execute the function and return the result", () => {
@@ -76,49 +76,5 @@ describe("tryCatchFinally", () => {
       },
     );
     assert(cleanup);
-  });
-});
-
-describe("relative", () => {
-  let cwd: string;
-
-  beforeAll(() => {
-    cwd = Deno.cwd();
-    Deno.chdir(new URL(".", import.meta.url));
-  });
-
-  afterAll(() => {
-    Deno.chdir(cwd);
-  });
-
-  it("should return the relative path from the first path to the second path", () => {
-    assertEquals(
-      relative(
-        new URL("..", import.meta.url),
-        new URL("../README.md", import.meta.url),
-      ),
-      "README.md",
-    );
-    assertEquals(
-      relative(
-        "..",
-        "../README.md",
-      ),
-      "README.md",
-    );
-    assertEquals(
-      relative(
-        "..",
-        new URL("../README.md", import.meta.url),
-      ),
-      "README.md",
-    );
-    assertEquals(
-      relative(
-        new URL("..", import.meta.url),
-        "../README.md",
-      ),
-      "README.md",
-    );
   });
 });

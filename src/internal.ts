@@ -1,16 +1,3 @@
-import { toPath } from "@molt/lib/path";
-import * as std from "@std/path";
-
-/**
- * Return the relative path from the first path to the second path.
- */
-export function relative(
-  from: string | URL,
-  to: string | URL,
-): string {
-  return std.relative(toPath(from), toPath(to));
-}
-
 /**
  * Try to execute a function and return the result or handle the error if the
  * function is synchronous, or return a promise that resolves to the result or

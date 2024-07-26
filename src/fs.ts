@@ -5,10 +5,17 @@
  */
 
 import { mapValues, pick } from "@std/collections";
-import { dirname, extname, fromFileUrl, join, resolve } from "@std/path";
+import {
+  dirname,
+  extname,
+  fromFileUrl,
+  join,
+  relative,
+  resolve,
+} from "@std/path";
 import type { Spy } from "@std/testing/mock";
 import * as std from "@std/testing/mock";
-import { relative, tryCatch, tryFinally } from "./internal.ts";
+import { tryCatch, tryFinally } from "./internal.ts";
 
 /**
  * The base names of Deno's APIs related to file system operations that takes
