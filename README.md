@@ -202,7 +202,7 @@ assertSpyCalls(spy.readTextFile, 1);
 Not write to the original path:
 
 ```typescript
-const stub = fs.stub(".");
+const stub = fs.stub("./test.txt");
 await fs.use(() => Deno.writeTextFile("./test.txt", "amber"));
 assertEquals(
   (await Deno.permissions.query({ name: "write", path: "./test.txt" }))

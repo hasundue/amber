@@ -72,7 +72,7 @@ describe("stub", () => {
   afterAll(() => Deno.chdir(cwd));
 
   it("should not write to the original path", async () => {
-    const stub = fs.stub(".");
+    const stub = fs.stub("./test.txt");
     await fs.use(() => Deno.writeTextFile("./test.txt", "amber"));
     assertEquals(
       (await Deno.permissions.query({ name: "write", path: "./test.txt" }))
