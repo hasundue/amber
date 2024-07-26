@@ -322,6 +322,9 @@
       "@std/path@1.0.1": {
         "integrity": "e061ff02c28481ca49e3a14981875c345e9fc7e973190672782cd0ac8af70428"
       },
+      "@std/path@1.0.2": {
+        "integrity": "a452174603f8c620bd278a380c596437a9eef50c891c64b85812f735245d9ec7"
+      },
       "@std/semver@0.224.3": {
         "integrity": "7bb34b5ad46de2c0c73de0ca3e30081ef64b4361f66abd57c84ff1011c6a1233"
       },
@@ -581,7 +584,7 @@
       "jsr:@molt/cli@^0.19.0-rc.9",
       "jsr:@std/assert@^1.0.0",
       "jsr:@std/collections@^1.0.0",
-      "jsr:@std/fs@^0.229.1",
+      "jsr:@std/fs@^1.0.0",
       "jsr:@std/path@^1.0.0",
       "jsr:@std/testing@^0.225.0"
     ]
