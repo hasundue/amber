@@ -27,6 +27,14 @@ cmd.mock();
 assert(Deno.Command !== Original);
 ```
 
+Stub any command by default:
+
+```typescript
+cmd.mock();
+await new Deno.Command("echo").output();
+assertNotRun("echo");
+```
+
 #### `use`
 
 Replace Deno.Command inside the callback:
@@ -69,10 +77,7 @@ Stub a command with the default dummy:
 ```typescript
 const echo = cmd.stub("echo");
 await cmd.use(() => new Deno.Command("echo").output());
-assertEquals(
-  Deno.permissions.querySync({ name: "run", command: "echo" }).state,
-  "prompt",
-);
+assertNotRun("echo");
 assertSpyCalls(echo, 1);
 ```
 
