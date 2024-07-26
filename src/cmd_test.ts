@@ -3,6 +3,13 @@ import { afterAll, afterEach, describe, it } from "@std/testing/bdd";
 import { assertSpyCalls } from "@std/testing/mock";
 import * as cmd from "./cmd.ts";
 
+function assertNotRun(command: string) {
+  assertEquals(
+    Deno.permissions.querySync({ name: "run", command }).state,
+    "prompt",
+  );
+}
+
 describe("mock", () => {
   const Original = Deno.Command;
 
@@ -13,6 +20,12 @@ describe("mock", () => {
   it("should replace Deno.Command as a side effect", () => {
     cmd.mock();
     assert(Deno.Command !== Original);
+  });
+
+  it("should stub any command by default", async () => {
+    cmd.mock();
+    await new Deno.Command("echo").output();
+    assertNotRun("echo");
   });
 });
 
@@ -53,10 +66,7 @@ describe("stub", () => {
   it("should stub a command with the default dummy", async () => {
     const echo = cmd.stub("echo");
     await cmd.use(() => new Deno.Command("echo").output());
-    assertEquals(
-      Deno.permissions.querySync({ name: "run", command: "echo" }).state,
-      "prompt",
-    );
+    assertNotRun("echo");
     assertSpyCalls(echo, 1);
   });
 

@@ -75,6 +75,9 @@ const CommandProxy: typeof Deno.Command = new Proxy(CommandOriginal, {
     const [command, options] = args as ConstructorParameters<
       typeof Deno.Command
     >;
+    if (spies.size === 0) {
+      return new (stub(command))(command, options);
+    }
     const spy = spies.get(command.toString());
     if (spy) {
       return new spy(command, options);
