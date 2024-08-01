@@ -176,6 +176,9 @@ const spies = new class extends Map<string | URL, FileSystemSpy> {
   }
 }();
 
+/** A map from stub paths to corresponding temporary directories. */
+const temps = new Map<string, string>();
+
 export interface StubOptions {
   readThrough?: boolean;
 }
@@ -206,7 +209,9 @@ export function stub(
 ): FileSystemStub {
   path = normalize(path);
   const base = extname(path) ? dirname(path) : path;
+
   const temp = Deno.makeTempDirSync();
+  temps.set(path, temp);
 
   const fake = isStubOptions(fakeOrOptions)
     ? createFsFake(base, temp, fakeOrOptions?.readThrough ?? true)
@@ -260,6 +265,8 @@ export function restore() {
 
 export function dispose() {
   restore();
+  temps.forEach((it) => Deno.removeSync(it, { recursive: true }));
+  temps.clear();
   spies.clear();
 }
 

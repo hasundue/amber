@@ -147,6 +147,7 @@ describe("dispose", () => {
     cwd = Deno.cwd();
     Deno.chdir(new URL("../", import.meta.url));
   });
+  afterEach(() => fs.dispose());
   afterAll(() => Deno.chdir(cwd));
 
   it("should restore file system functions", () => {
