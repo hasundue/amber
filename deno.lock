@@ -7,7 +7,7 @@
       "jsr:@core/unknownutil@3.18.0": "jsr:@core/unknownutil@3.18.0",
       "jsr:@std/assert@1.0.0-rc.2": "jsr:@std/assert@1.0.0-rc.2",
       "jsr:@std/assert@^1.0.0": "jsr:@std/assert@1.0.6",
-      "jsr:@std/collections@^1.0.0": "jsr:@std/collections@1.0.5",
+      "jsr:@std/collections@^1.0.0": "jsr:@std/collections@1.0.8",
       "jsr:@std/internal@^1.0.0": "jsr:@std/internal@1.0.1",
       "jsr:@std/internal@^1.0.1": "jsr:@std/internal@1.0.1",
       "jsr:@std/internal@^1.0.4": "jsr:@std/internal@1.0.4",
@@ -48,9 +48,6 @@
         "dependencies": [
           "jsr:@std/internal@^1.0.4"
         ]
-      },
-      "@std/collections@1.0.5": {
-        "integrity": "ab9eac23b57a0c0b89ba45134e61561f69f3d001f37235a248ed40be260c0c10"
       },
       "@std/collections@1.0.8": {
         "integrity": "de76692f9121838711b1d2fb5042619c074db26905a87b58cff56cfe1bd6d6d0"
