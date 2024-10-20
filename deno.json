@@ -14,7 +14,7 @@
     ]
   },
   "imports": {
-    "@chiezo/bddoc": "jsr:@chiezo/bddoc@^0.0.4",
+    "@chiezo/bddoc": "jsr:@chiezo/bddoc@^0.0.5",
     "@std/assert": "jsr:@std/assert@^1.0.0",
     "@std/collections": "jsr:@std/collections@^1.0.0",
     "@std/path": "jsr:@std/path@^1.0.0",
