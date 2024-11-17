@@ -5,8 +5,8 @@
       "jsr:@chiezo/bddoc@^0.0.5": "jsr:@chiezo/bddoc@0.0.5",
       "jsr:@core/match@^0.3.1": "jsr:@core/match@0.3.1",
       "jsr:@core/unknownutil@3.18.0": "jsr:@core/unknownutil@3.18.0",
-      "jsr:@std/assert@^1.0.0": "jsr:@std/assert@1.0.7",
-      "jsr:@std/assert@^1.0.7": "jsr:@std/assert@1.0.7",
+      "jsr:@std/assert@^1.0.0": "jsr:@std/assert@1.0.8",
+      "jsr:@std/assert@^1.0.8": "jsr:@std/assert@1.0.8",
       "jsr:@std/async@^1.0.8": "jsr:@std/async@1.0.8",
       "jsr:@std/collections@^1.0.0": "jsr:@std/collections@1.0.9",
       "jsr:@std/data-structures@^1.0.4": "jsr:@std/data-structures@1.0.4",
@@ -15,7 +15,7 @@
       "jsr:@std/path@^1.0.0": "jsr:@std/path@1.0.8",
       "jsr:@std/path@^1.0.7": "jsr:@std/path@1.0.8",
       "jsr:@std/path@^1.0.8": "jsr:@std/path@1.0.8",
-      "jsr:@std/testing@^1.0.0": "jsr:@std/testing@1.0.4",
+      "jsr:@std/testing@^1.0.0": "jsr:@std/testing@1.0.5",
       "npm:@swc/wasm-web@^1.7.4": "npm:@swc/wasm-web@1.7.36",
       "npm:dedent@^1.5.3": "npm:dedent@1.5.3",
       "npm:ts-toolbelt@9.6.0": "npm:ts-toolbelt@9.6.0"
@@ -39,12 +39,6 @@
       },
       "@core/unknownutil@3.18.0": {
         "integrity": "bff7ab4a2f554bbade301127519523b0d3baa4273ecbed51287133ac00a48738"
-      },
-      "@std/assert@1.0.7": {
-        "integrity": "64ce9fac879e0b9f3042a89b3c3f8ccfc9c984391af19e2087513a79d73e28c3",
-        "dependencies": [
-          "jsr:@std/internal@^1.0.5"
-        ]
       },
       "@std/assert@1.0.8": {
         "integrity": "ebe0bd7eb488ee39686f77003992f389a06c3da1bbd8022184804852b2fa641b",
@@ -79,10 +73,10 @@
       "@std/path@1.0.8": {
         "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
       },
-      "@std/testing@1.0.4": {
-        "integrity": "ca1368d720b183f572d40c469bb9faf09643ddd77b54f8b44d36ae6b94940576",
+      "@std/testing@1.0.5": {
+        "integrity": "6e693cbec94c81a1ad3df668685c7ba8e20742bb10305bc7137faa5cf16d2ec4",
         "dependencies": [
-          "jsr:@std/assert@^1.0.7",
+          "jsr:@std/assert@^1.0.8",
           "jsr:@std/async@^1.0.8",
           "jsr:@std/data-structures@^1.0.4",
           "jsr:@std/fs@^1.0.5",
