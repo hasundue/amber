@@ -46,6 +46,12 @@
           "jsr:@std/internal@^1.0.5"
         ]
       },
+      "@std/assert@1.0.9": {
+        "integrity": "a9f0c611a869cc791b26f523eec54c7e187aab7932c2c8e8bea0622d13680dcd",
+        "dependencies": [
+          "jsr:@std/internal@^1.0.5"
+        ]
+      },
       "@std/async@1.0.8": {
         "integrity": "c057c5211a0f1d12e7dcd111ab430091301b8d64b4250052a79d277383bc3ba7"
       },
