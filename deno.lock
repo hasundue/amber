@@ -8,7 +8,7 @@
       "jsr:@std/assert@^1.0.0": "jsr:@std/assert@1.0.10",
       "jsr:@std/assert@^1.0.10": "jsr:@std/assert@1.0.10",
       "jsr:@std/async@^1.0.9": "jsr:@std/async@1.0.9",
-      "jsr:@std/collections@^1.0.0": "jsr:@std/collections@1.0.9",
+      "jsr:@std/collections@^1.0.0": "jsr:@std/collections@1.0.10",
       "jsr:@std/data-structures@^1.0.5": "jsr:@std/data-structures@1.0.5",
       "jsr:@std/fs@^1.0.8": "jsr:@std/fs@1.0.8",
       "jsr:@std/internal@^1.0.5": "jsr:@std/internal@1.0.5",
@@ -54,6 +54,9 @@
       },
       "@std/async@1.0.9": {
         "integrity": "c6472fd0623b3f3daae023cdf7ca5535e1b721dfbf376562c0c12b3fb4867f91"
+      },
+      "@std/collections@1.0.10": {
+        "integrity": "903af106a3d92970d74e20f7ebff77d9658af9bef4403f1dc42a7801c0575899"
       },
       "@std/collections@1.0.8": {
         "integrity": "de76692f9121838711b1d2fb5042619c074db26905a87b58cff56cfe1bd6d6d0"
