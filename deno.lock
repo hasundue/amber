@@ -89,6 +89,9 @@
       "@std/path@1.0.8": {
         "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
       },
+      "@std/path@1.0.9": {
+        "integrity": "260a49f11edd3db93dd38350bf9cd1b4d1366afa98e81b86167b4e3dd750129e"
+      },
       "@std/testing@1.0.9": {
         "integrity": "9bdd4ac07cb13e7594ac30e90f6ceef7254ac83a9aeaa089be0008f33aab5cd4",
         "dependencies": [
