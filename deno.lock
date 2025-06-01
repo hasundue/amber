@@ -90,6 +90,9 @@
       "@std/path@1.0.9": {
         "integrity": "260a49f11edd3db93dd38350bf9cd1b4d1366afa98e81b86167b4e3dd750129e"
       },
+      "@std/path@1.1.0": {
+        "integrity": "ddc94f8e3c275627281cbc23341df6b8bcc874d70374f75fec2533521e3d6886"
+      },
       "@std/testing@1.0.12": {
         "integrity": "fec973a45ccc62c540fb89296199051fee142409138fd6e3eae409366bcd4720",
         "dependencies": [
