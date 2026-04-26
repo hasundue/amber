@@ -106,6 +106,12 @@
       "@std/path@1.1.0": {
         "integrity": "ddc94f8e3c275627281cbc23341df6b8bcc874d70374f75fec2533521e3d6886"
       },
+      "@std/path@1.1.4": {
+        "integrity": "1d2d43f39efb1b42f0b1882a25486647cb851481862dc7313390b2bb044314b5",
+        "dependencies": [
+          "jsr:@std/internal@^1.0.12"
+        ]
+      },
       "@std/testing@1.0.14": {
         "integrity": "144b3737105b9071cb50c957681f58a1b8ec0f3e5b19ad830f401c5fa931e8f0",
         "dependencies": [
